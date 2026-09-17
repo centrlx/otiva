@@ -6,6 +6,7 @@ import {
   orderBy,
   limit,
   getDocs,
+  onSnapshot,
   doc,
   updateDoc,
   deleteDoc,
@@ -20,7 +21,7 @@ import {
 import { db } from './firebase-config.js';
 import { mountHeader, requireAdmin } from './auth.js';
 import { CATEGORIES, CITIES, LISTING_STATUS, CHAT_STATUS } from './constants.js';
-import { formatPrice, formatDate, formatDateTime, escapeHtml, debounce, toast, qs } from './utils.js';
+import { formatPrice, formatDate, formatDateTime, escapeHtml, debounce, toast, qs, renderIcons } from './utils.js';
 import { confirmModal } from './modal.js';
 
 mountHeader();
@@ -178,12 +179,18 @@ async function loadChats() {
             <td>${escapeHtml(c.ownerName || '')}</td>
             <td><span class="pill pill--${c.status}">${CHAT_STATUS[c.status] || c.status}</span></td>
             <td>${formatDateTime(c.lastMessageAt)}</td>
-            <td>${c.status === 'pending' ? `<button class="btn btn-danger btn-sm" data-cancel="${c.id}" type="button">Отменить</button>` : ''}</td>
+            <td class="admin-table__actions">
+              <button class="btn btn-ghost btn-sm" data-view="${c.id}" type="button">Просмотреть</button>
+              ${c.status === 'pending' ? `<button class="btn btn-danger btn-sm" data-cancel="${c.id}" type="button">Отменить</button>` : ''}
+            </td>
           </tr>
         `).join('')}
       </tbody>
     </table>
   `;
+  host.querySelectorAll('[data-view]').forEach((btn) => {
+    btn.addEventListener('click', () => openChatViewer(items.find((x) => x.id === btn.dataset.view)));
+  });
   host.querySelectorAll('[data-cancel]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       if (!(await confirmModal('Принудительно отменить сделку?'))) return;
@@ -208,6 +215,75 @@ async function loadChats() {
         loadChats();
       } catch (err) { toast('Ошибка: ' + err.message, 'error'); }
     });
+  });
+}
+
+// Модерация: читать переписку любых двух пользователей может только админ
+// (правила Firestore разрешают это отдельной веткой isAdmin() в chats/messages).
+function openChatViewer(chat) {
+  if (!chat) return;
+  let host = document.getElementById('admin-modal-host');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'admin-modal-host';
+    document.body.appendChild(host);
+  }
+  host.innerHTML = `
+    <div class="modal-backdrop is-open" id="admin-chat-backdrop">
+      <div class="modal-card admin-chat-modal">
+        <div class="admin-chat-modal__head">
+          <div>
+            <h3 class="mt-0" style="margin-bottom:2px;">${escapeHtml(chat.listingTitle)}</h3>
+            <span class="muted" style="font-size:12.5px;">Покупатель: ${escapeHtml(chat.buyerName || '')} · Продавец: ${escapeHtml(chat.ownerName || '')}</span>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="admin-chat-close-btn" aria-label="Закрыть">
+            <i data-lucide="x" class="icon" style="width:16px;height:16px;"></i>
+          </button>
+        </div>
+        <div class="admin-chat-modal__messages" id="admin-chat-messages">
+          <div class="loader">Загрузка…</div>
+        </div>
+      </div>
+    </div>
+  `;
+  renderIcons();
+
+  const unsub = onSnapshot(
+    query(collection(db, 'chats', chat.id, 'messages'), orderBy('createdAt', 'asc')),
+    (snap) => {
+      const box = document.getElementById('admin-chat-messages');
+      if (!box) return;
+      if (snap.empty) {
+        box.innerHTML = '<p class="muted text-center">Сообщений пока нет.</p>';
+        return;
+      }
+      box.innerHTML = snap.docs
+        .map((d) => {
+          const m = d.data();
+          return `
+            <div class="chat-bubble ${m.senderId === chat.ownerId ? 'chat-bubble--own' : ''}">
+              <div class="chat-bubble__sender">${escapeHtml(m.senderName)}</div>
+              <div class="chat-bubble__text">${escapeHtml(m.text)}</div>
+              <div class="chat-bubble__time">${formatDateTime(m.createdAt)}</div>
+            </div>
+          `;
+        })
+        .join('');
+      box.scrollTop = box.scrollHeight;
+    },
+    (err) => {
+      const box = document.getElementById('admin-chat-messages');
+      if (box) box.innerHTML = `<p class="muted">Не удалось загрузить переписку: ${err.message}</p>`;
+    }
+  );
+
+  const close = () => {
+    unsub();
+    host.innerHTML = '';
+  };
+  document.getElementById('admin-chat-close-btn').addEventListener('click', close);
+  document.getElementById('admin-chat-backdrop').addEventListener('click', (e) => {
+    if (e.target.id === 'admin-chat-backdrop') close();
   });
 }
 
