@@ -2,107 +2,11 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<script>try{var t=localStorage.getItem("otiva_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
-<title>OTIVA — доска объявлений</title>
-<link rel="stylesheet" href="css/styles.css" />
-<link rel="stylesheet" href="css/catalog.css" />
+<meta http-equiv="refresh" content="0; url=pages/index.html" />
+<title>OTIVA</title>
 </head>
 <body>
-<header class="site-header" id="app-header"></header>
-
-<main>
-  <section class="section" style="padding-bottom:6px;">
-    <div class="container">
-      <h1 style="font-size:20px;margin-bottom:14px;">Категории</h1>
-    </div>
-    <div class="category-strip" id="category-strip"></div>
-  </section>
-
-  <section class="section">
-    <div class="container catalog-layout">
-      <div class="filter-backdrop" id="filter-backdrop"></div>
-      <aside class="filters card" id="filters">
-        <div class="filters-head">
-          <h3 class="mt-0">Фильтры</h3>
-          <button class="btn btn-ghost btn-sm filters-close" id="filters-close" type="button" aria-label="Закрыть">
-            <i data-lucide="x" class="icon"></i>
-          </button>
-        </div>
-        <div class="field">
-          <label for="f-search">Поиск</label>
-          <input type="search" id="f-search" placeholder="Название или описание…" />
-        </div>
-        <div class="field">
-          <label for="f-category">Категория</label>
-          <select id="f-category"><option value="">Все категории</option></select>
-        </div>
-        <div class="field">
-          <label for="f-city">Город</label>
-          <select id="f-city"><option value="">Любой город</option></select>
-        </div>
-        <div class="field">
-          <label for="f-condition">Состояние</label>
-          <select id="f-condition">
-            <option value="">Любое</option>
-            <option value="new">Новое</option>
-            <option value="used">Б/у</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Цена, ₸</label>
-          <div class="field-row">
-            <input type="number" id="f-price-min" min="0" placeholder="от" />
-            <input type="number" id="f-price-max" min="0" placeholder="до" />
-          </div>
-          <p class="field-hint">При заданной цене сортировка переключится на «по цене».</p>
-        </div>
-        <div class="field">
-          <label for="f-sort">Сортировка</label>
-          <select id="f-sort"></select>
-        </div>
-        <button class="btn btn-ghost btn-block" id="f-reset" type="button">Сбросить фильтры</button>
-      </aside>
-
-      <div class="catalog-main">
-        <div class="live-banner" id="live-banner" hidden>
-          <span>Появились новые объявления</span>
-          <button class="btn btn-primary btn-sm" id="live-refresh-btn" type="button">Показать</button>
-        </div>
-
-        <div class="section-head">
-          <h2 id="results-title" class="mt-0">Все объявления</h2>
-          <div class="flex-between gap-8">
-            <span class="muted" id="results-count"></span>
-            <button class="btn btn-ghost btn-sm filters-toggle" id="filters-toggle" type="button">
-              <i data-lucide="sliders-horizontal" class="icon" style="width:16px;height:16px;"></i>
-              Фильтры
-            </button>
-          </div>
-        </div>
-
-        <div class="listing-grid" id="listing-grid"></div>
-        <div class="skeleton-grid listing-grid" id="skeleton-grid"></div>
-        <div class="empty-state" id="empty-state" hidden>
-          <h3>Ничего не найдено</h3>
-          <p>Попробуйте изменить фильтры или поисковый запрос.</p>
-        </div>
-        <div class="text-center" id="load-more-wrap" hidden>
-          <button class="btn btn-secondary" id="load-more-btn" type="button">Показать ещё</button>
-        </div>
-      </div>
-    </div>
-  </section>
-</main>
-
-<footer class="site-footer">
-  <div class="container">
-    <span>© 2026 OTIVA</span>
-    <span>Доска объявлений</span>
-  </div>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.462.0/dist/umd/lucide.js"></script>
-<script type="module" src="js/catalog.js"></script>
+<script>window.location.replace('pages/index.html');</script>
+<p><a href="pages/index.html">Перейти в каталог OTIVA →</a></p>
 </body>
 </html>

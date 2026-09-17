@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script>try{var t=localStorage.getItem("otiva_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <title>Вход и регистрация — OTIVA</title>
-<link rel="stylesheet" href="css/styles.css" />
-<link rel="stylesheet" href="css/auth.css" />
+<link rel="stylesheet" href="../css/styles.css" />
+<link rel="stylesheet" href="../css/auth.css" />
 </head>
 <body>
 <header class="site-header" id="app-header"></header>
@@ -75,9 +75,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.462.0/dist/umd/lucide.js"></script>
 <script type="module">
-  import { mountHeader, loginUser, registerUser, resetPassword, authReady } from './js/auth.js';
-  import { CITIES } from './js/constants.js';
-  import { toast, getParam } from './js/utils.js';
+  import { mountHeader, loginUser, registerUser, resetPassword, authReady } from '../js/auth.js';
+  import { CITIES } from '../js/constants.js';
+  import { toast, getParam } from '../js/utils.js';
 
   mountHeader();
 
