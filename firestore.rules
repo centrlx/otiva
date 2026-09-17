@@ -1,0 +1,129 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isChatParticipant(chatResource) {
+      return isSignedIn() && (chatResource.data.buyerId == request.auth.uid || chatResource.data.ownerId == request.auth.uid);
+    }
+
+    // ---------- users ----------
+    match /users/{userId} {
+      // Имя/город/рейтинг продавца должны быть видны всем на витрине объявлений.
+      allow read: if true;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isAdmin() ||
+        (isSignedIn() && request.auth.uid == userId && request.resource.data.role == resource.data.role);
+      allow delete: if isAdmin();
+
+      // Избранное конкретного пользователя — полностью приватное, видит и пишет только он сам.
+      match /favorites/{favoriteId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // ---------- listings ----------
+    match /listings/{listingId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid ||
+        isAdmin() ||
+        // разрешаем пересчёт рейтинга любому автору отзыва — только эти два поля
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingAvg', 'reviewsCount'])
+      );
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+
+      match /reviews/{reviewId} {
+        allow read: if true;
+        // Id документа обязан совпадать с uid автора — не более одного отзыва на пользователя,
+        // гарантировано на уровне базы (клиент использует setDoc(..., 'reviews', uid)).
+        allow create: if isSignedIn()
+          && reviewId == request.auth.uid
+          && request.resource.data.authorId == request.auth.uid;
+        allow update, delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
+      }
+    }
+
+    // ---------- chats (переписка покупателя с продавцом по объявлению) ----------
+    match /chats/{chatId} {
+      // resource == null — документа ещё нет (клиент проверяет getDoc перед созданием чата,
+      // "не найдено" не должно превращаться в permission-denied).
+      allow read: if isSignedIn() && (
+        resource == null ||
+        resource.data.buyerId == request.auth.uid ||
+        resource.data.ownerId == request.auth.uid ||
+        isAdmin()
+      );
+      // Id чата = "{listingId}_{buyerId}" — один чат на пару (объявление, покупатель).
+      allow create: if isSignedIn()
+        && request.resource.data.buyerId == request.auth.uid
+        && request.resource.data.ownerId != request.auth.uid
+        && request.resource.data.status == 'pending'
+        && chatId == (request.resource.data.listingId + '_' + request.auth.uid);
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        // покупатель подтверждает только свою сторону
+        (resource.data.buyerId == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confirmedByBuyer'])) ||
+        // владелец подтверждает только свою сторону
+        (resource.data.ownerId == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confirmedByOwner'])) ||
+        // завершить (completed) может только владелец, и только когда ОБЕ стороны уже подтвердили
+        (resource.data.ownerId == request.auth.uid &&
+          resource.data.confirmedByOwner == true && resource.data.confirmedByBuyer == true &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+          request.resource.data.status == 'completed') ||
+        // отклонить может любой участник, но только пока не подтвердили ОБЕ стороны
+        (isChatParticipant(resource) &&
+          !(resource.data.confirmedByOwner == true && resource.data.confirmedByBuyer == true) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+          request.resource.data.status == 'cancelled') ||
+        // любой из участников — превью последнего сообщения и свой флаг непрочитанного
+        (isChatParticipant(resource) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'lastMessageAt', 'unreadForOwner', 'unreadForBuyer']))
+      );
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && (
+          get(/databases/$(database)/documents/chats/$(chatId)).data.buyerId == request.auth.uid ||
+          get(/databases/$(database)/documents/chats/$(chatId)).data.ownerId == request.auth.uid ||
+          isAdmin()
+        );
+        allow create: if isSignedIn()
+          && request.resource.data.senderId == request.auth.uid
+          && (
+            get(/databases/$(database)/documents/chats/$(chatId)).data.buyerId == request.auth.uid ||
+            get(/databases/$(database)/documents/chats/$(chatId)).data.ownerId == request.auth.uid
+          );
+        allow update, delete: if false;
+      }
+    }
+
+    // ---------- history (архив завершённых/отменённых броней) ----------
+    match /history/{historyId} {
+      allow read: if isSignedIn() && (
+        resource.data.requesterId == request.auth.uid ||
+        resource.data.ownerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isSignedIn() && (
+        request.resource.data.requesterId == request.auth.uid ||
+        request.resource.data.ownerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow update: if false; // неизменяемый лог
+      allow delete: if isAdmin();
+    }
+  }
+}

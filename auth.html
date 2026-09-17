@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>try{var t=localStorage.getItem("otiva_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<title>Вход и регистрация — OTIVA</title>
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="stylesheet" href="css/auth.css" />
+</head>
+<body>
+<header class="site-header" id="app-header"></header>
+
+<main>
+  <section class="section">
+    <div class="container auth-wrap">
+      <div class="card auth-card">
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab is-active" data-tab="login">Вход</button>
+          <button type="button" class="auth-tab" data-tab="register">Регистрация</button>
+        </div>
+
+        <form id="login-form" class="auth-form">
+          <div class="field">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" required autocomplete="email" />
+          </div>
+          <div class="field">
+            <label for="login-password">Пароль</label>
+            <input type="password" id="login-password" required autocomplete="current-password" minlength="6" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Войти</button>
+          <button type="button" class="link-btn" id="forgot-btn">Забыли пароль?</button>
+        </form>
+
+        <form id="register-form" class="auth-form" hidden>
+          <div class="field">
+            <label for="reg-name">Имя</label>
+            <input type="text" id="reg-name" required autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="reg-email">Email</label>
+            <input type="email" id="reg-email" required autocomplete="email" />
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="reg-city">Город</label>
+              <input type="text" id="reg-city" list="cities-list" autocomplete="address-level2" />
+              <datalist id="cities-list"></datalist>
+            </div>
+            <div class="field">
+              <label for="reg-phone">Телефон</label>
+              <input type="tel" id="reg-phone" autocomplete="tel" placeholder="+7 900 000-00-00" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="reg-password">Пароль</label>
+            <input type="password" id="reg-password" required autocomplete="new-password" minlength="6" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Создать аккаунт</button>
+        </form>
+
+        <p class="auth-note" id="auth-msg"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <span>© 2026 OTIVA</span>
+    <span>Доска объявлений</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.462.0/dist/umd/lucide.js"></script>
+<script type="module">
+  import { mountHeader, loginUser, registerUser, resetPassword, authReady } from './js/auth.js';
+  import { CITIES } from './js/constants.js';
+  import { toast, getParam } from './js/utils.js';
+
+  mountHeader();
+
+  document.getElementById('cities-list').innerHTML = CITIES.map((c) => `<option value="${c}"></option>`).join('');
+
+  const tabs = document.querySelectorAll('.auth-tab');
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const msg = document.getElementById('auth-msg');
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach((t) => t.classList.remove('is-active'));
+      tab.classList.add('is-active');
+      msg.textContent = '';
+      const isLogin = tab.dataset.tab === 'login';
+      loginForm.hidden = !isLogin;
+      registerForm.hidden = isLogin;
+    });
+  });
+
+  function redirectAfterAuth() {
+    const target = getParam('redirect');
+    window.location.href = target ? decodeURIComponent(target) : 'index.html';
+  }
+
+  authReady().then(({ user }) => {
+    if (user) redirectAfterAuth();
+  });
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.textContent = '';
+    try {
+      await loginUser(
+        document.getElementById('login-email').value.trim(),
+        document.getElementById('login-password').value
+      );
+      toast('Добро пожаловать!', 'success');
+      redirectAfterAuth();
+    } catch (err) {
+      msg.textContent = describeAuthError(err);
+    }
+  });
+
+  registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.textContent = '';
+    try {
+      await registerUser({
+        email: document.getElementById('reg-email').value.trim(),
+        password: document.getElementById('reg-password').value,
+        displayName: document.getElementById('reg-name').value.trim(),
+        city: document.getElementById('reg-city').value.trim(),
+        phone: document.getElementById('reg-phone').value.trim(),
+      });
+      toast('Аккаунт создан!', 'success');
+      redirectAfterAuth();
+    } catch (err) {
+      msg.textContent = describeAuthError(err);
+    }
+  });
+
+  document.getElementById('forgot-btn').addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value.trim();
+    if (!email) { msg.textContent = 'Введите email в поле выше, затем нажмите «Забыли пароль?».'; return; }
+    try {
+      await resetPassword(email);
+      msg.textContent = 'Письмо для сброса пароля отправлено на ' + email;
+    } catch (err) {
+      msg.textContent = describeAuthError(err);
+    }
+  });
+
+  function describeAuthError(err) {
+    const map = {
+      'auth/email-already-in-use': 'Этот email уже зарегистрирован.',
+      'auth/invalid-email': 'Некорректный email.',
+      'auth/weak-password': 'Пароль слишком простой (минимум 6 символов).',
+      'auth/invalid-credential': 'Неверный email или пароль.',
+      'auth/user-not-found': 'Пользователь не найден.',
+      'auth/wrong-password': 'Неверный пароль.',
+      'auth/too-many-requests': 'Слишком много попыток. Попробуйте позже.',
+    };
+    return map[err.code] || 'Ошибка: ' + (err.message || err);
+  }
+</script>
+</body>
+</html>

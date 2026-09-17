@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>try{var t=localStorage.getItem("otiva_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<title>Админ-панель — OTIVA</title>
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+<header class="site-header" id="app-header"></header>
+
+<main>
+  <section class="page-hero">
+    <div class="container">
+      <h1>Админ-панель</h1>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="tabs">
+        <button class="tab is-active" data-tab="listings" type="button">Объявления</button>
+        <button class="tab" data-tab="users" type="button">Пользователи</button>
+        <button class="tab" data-tab="chats" type="button">Сделки</button>
+        <button class="tab" data-tab="reviews" type="button">Отзывы</button>
+        <button class="tab" data-tab="stats" type="button">Статистика</button>
+      </div>
+
+      <div id="listings-panel" class="panel">
+        <input type="search" id="listings-search" class="admin-search" placeholder="Фильтр по названию…" />
+        <div id="listings-table"></div>
+      </div>
+      <div id="users-panel" class="panel" hidden>
+        <div id="users-table"></div>
+      </div>
+      <div id="chats-panel" class="panel" hidden>
+        <div id="chats-table"></div>
+      </div>
+      <div id="reviews-panel" class="panel" hidden>
+        <div id="reviews-table"></div>
+      </div>
+      <div id="stats-panel" class="panel" hidden>
+        <div class="stats-grid" id="stats-grid"></div>
+        <div class="card" style="padding:18px;margin-top:18px;">
+          <h3 class="mt-0">Демо-данные</h3>
+          <p class="muted">Быстро заполнить каталог тестовыми объявлениями для проверки поиска, фильтров и пагинации.</p>
+          <button class="btn btn-secondary" id="seed-btn" type="button">Заполнить демо-данными (20 объявлений)</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <span>© 2026 OTIVA</span>
+    <span>Доска объявлений</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.462.0/dist/umd/lucide.js"></script>
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>

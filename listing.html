@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>try{var t=localStorage.getItem("otiva_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<title>Объявление — OTIVA</title>
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="stylesheet" href="css/listing.css" />
+</head>
+<body>
+<header class="site-header" id="app-header"></header>
+
+<main>
+  <div class="container">
+    <a href="index.html" class="back-link"><i data-lucide="arrow-left" class="icon"></i> К каталогу</a>
+  </div>
+
+  <div id="listing-loader" class="loader">Загрузка…</div>
+  <div id="listing-not-found" class="empty-state" hidden>
+    <h3>Объявление не найдено</h3>
+    <p>Возможно, оно было удалено или архивировано.</p>
+  </div>
+
+  <section class="section" id="listing-content" hidden>
+    <div class="container listing-layout">
+      <div class="listing-main">
+        <div class="card listing-gallery" id="gallery"></div>
+
+        <div class="card listing-info-card">
+          <div class="flex-between">
+            <span class="pill" id="listing-status-pill"></span>
+            <div class="flex-between gap-8">
+              <span class="muted" id="listing-date"></span>
+              <button type="button" class="btn btn-ghost btn-sm" id="favorite-toggle-btn">
+                <i data-lucide="heart" class="icon" style="width:16px;height:16px;"></i>
+                <span id="favorite-toggle-label">В избранное</span>
+              </button>
+            </div>
+          </div>
+          <h1 id="listing-title" class="mt-0"></h1>
+          <div class="listing-price" id="listing-price"></div>
+          <div class="listing-tags" id="listing-tags"></div>
+          <p id="listing-description"></p>
+        </div>
+
+        <div class="card reviews-card">
+          <h3>Отзывы и комментарии <span id="reviews-count" class="muted"></span></h3>
+          <div id="review-form-wrap"></div>
+          <div id="reviews-list"></div>
+        </div>
+      </div>
+
+      <aside class="listing-side">
+        <div class="card owner-card">
+          <h3>Продавец</h3>
+          <div class="owner-row">
+            <div class="owner-avatar" id="owner-avatar"></div>
+            <div>
+              <div class="owner-name" id="owner-name"></div>
+              <div class="muted" id="owner-city"></div>
+            </div>
+          </div>
+          <div id="action-area"></div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="container">
+      <div class="section-head">
+        <h2>Похожие объявления</h2>
+      </div>
+      <div class="listing-grid" id="related-grid"></div>
+      <div class="text-center" id="related-more-wrap" hidden>
+        <button class="btn btn-ghost" id="related-more-btn" type="button">Показать ещё</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <span>© 2026 OTIVA</span>
+    <span>Доска объявлений</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.462.0/dist/umd/lucide.js"></script>
+<script type="module" src="js/listing.js"></script>
+</body>
+</html>

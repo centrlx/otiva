@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>try{var t=localStorage.getItem("otiva_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<title>Сообщения — OTIVA</title>
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="stylesheet" href="css/messages.css" />
+</head>
+<body>
+<header class="site-header" id="app-header"></header>
+
+<main>
+  <section class="section" style="padding-bottom:0;">
+    <div class="container">
+      <h1 style="font-size:20px;margin-bottom:16px;">Сообщения</h1>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <div class="messages-layout" id="messages-layout">
+        <aside class="card chat-list" id="chat-list"></aside>
+
+        <div class="card chat-pane">
+          <div class="chat-empty" id="chat-empty">
+            <i data-lucide="message-circle" class="icon" style="width:40px;height:40px;"></i>
+            <p>Выберите чат слева или напишите продавцу со страницы объявления.</p>
+          </div>
+          <div class="chat-active" id="chat-active" hidden>
+            <div class="chat-active__header" id="chat-header"></div>
+            <div class="chat-active__messages" id="chat-messages"></div>
+            <form class="chat-active__form" id="chat-send-form">
+              <input type="text" id="chat-text-input" placeholder="Написать сообщение…" autocomplete="off" maxlength="1000" />
+              <button type="submit" class="btn btn-primary btn-sm" aria-label="Отправить">
+                <i data-lucide="send" class="icon" style="width:16px;height:16px;"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <span>© 2026 OTIVA</span>
+    <span>Доска объявлений</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.462.0/dist/umd/lucide.js"></script>
+<script type="module" src="js/messages.js"></script>
+</body>
+</html>
