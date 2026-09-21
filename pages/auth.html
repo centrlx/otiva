@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script>try{var t=localStorage.getItem("otiva_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <title>Вход и регистрация — OTIVA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
 <link rel="stylesheet" href="../css/styles.css" />
 <link rel="stylesheet" href="../css/auth.css" />
 </head>
@@ -73,7 +78,7 @@
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.462.0/dist/umd/lucide.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/lucide@0.462.0/dist/umd/lucide.js"></script>
 <script type="module">
   import { mountHeader, loginUser, registerUser, resetPassword, authReady } from '../js/auth.js';
   import { CITIES } from '../js/constants.js';
@@ -126,16 +131,21 @@
   registerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     msg.textContent = '';
+    const email = document.getElementById('reg-email').value.trim();
     try {
       await registerUser({
-        email: document.getElementById('reg-email').value.trim(),
+        email,
         password: document.getElementById('reg-password').value,
         displayName: document.getElementById('reg-name').value.trim(),
         city: document.getElementById('reg-city').value.trim(),
         phone: document.getElementById('reg-phone').value.trim(),
       });
-      toast('Аккаунт создан!', 'success');
-      redirectAfterAuth();
+      toast('Аккаунт создан! Теперь войдите.', 'success');
+      registerForm.reset();
+      document.querySelector('.auth-tab[data-tab="login"]').click();
+      loginForm.reset();
+      document.activeElement?.blur();
+      msg.textContent = 'Аккаунт создан — войдите с указанным паролем.';
     } catch (err) {
       msg.textContent = describeAuthError(err);
     }

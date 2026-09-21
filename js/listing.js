@@ -61,8 +61,15 @@ let myReviewCache = null;
 let reviewFormInitialized = false;
 
 await authReady();
-await ensureFavoritesLoaded();
 watchListing();
+// Избранное грузим параллельно с объявлением, а не до него — иначе страница
+// объявления ждёт лишний сетевой запрос, прежде чем показать хоть что-то.
+ensureFavoritesLoaded().then(() => {
+  syncFavoriteButton();
+  document.querySelectorAll('#related-grid .favorite-btn[data-fav]').forEach((btn) => {
+    btn.classList.toggle('is-active', isFavorite(btn.dataset.fav));
+  });
+});
 
 function watchListing() {
   const ref = doc(db, 'listings', listingId);

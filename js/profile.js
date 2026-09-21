@@ -25,7 +25,6 @@ mountHeader();
 const auth = await requireAuth();
 if (!auth) throw new Error('redirecting to auth');
 const { user, profile } = auth;
-await ensureFavoritesLoaded();
 
 qs('#hero-sub').textContent = `${profile?.displayName || user.email} · роль: ${profile?.role === 'admin' ? 'администратор' : 'пользователь'}`;
 qs('#p-cities').innerHTML = CITIES.map((c) => `<option value="${c}"></option>`).join('');
@@ -115,7 +114,10 @@ function listingRow(id, d) {
 
 async function loadFavorites() {
   panels.favorites.innerHTML = '<div class="loader">Загрузка…</div>';
+  // Не await — идёт параллельно с запросом ниже, нужен только к моменту клика «Убрать».
+  const favCachePromise = ensureFavoritesLoaded();
   const snap = await getDocs(query(collection(db, 'users', user.uid, 'favorites'), orderBy('createdAt', 'desc'), limit(50)));
+  await favCachePromise;
   if (snap.empty) {
     panels.favorites.innerHTML = `<div class="empty-state"><h3>Список избранного пуст</h3><a class="btn btn-primary" href="index.html">Перейти в каталог</a></div>`;
     return;

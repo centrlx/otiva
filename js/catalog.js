@@ -266,7 +266,14 @@ qs('#filters-toggle').addEventListener('click', openFilters);
 qs('#filters-close').addEventListener('click', closeFilters);
 filterBackdrop.addEventListener('click', closeFilters);
 
-ensureFavoritesLoaded().then(() => loadPage(true));
+// Список избранного грузим параллельно, а не до объявлений — иначе каталог ждёт
+// лишний сетевой запрос, прежде чем показать хоть что-то.
+loadPage(true);
+ensureFavoritesLoaded().then(() => {
+  document.querySelectorAll('.favorite-btn[data-fav]').forEach((btn) => {
+    btn.classList.toggle('is-active', isFavorite(btn.dataset.fav));
+  });
+});
 renderIcons();
 
 // Realtime: отслеживаем самые свежие объявления и показываем баннер,

@@ -52,6 +52,8 @@ export async function refreshProfile() {
   return currentProfile;
 }
 
+// После регистрации Firebase Auth сам логинит пользователя — разлогиниваем обратно,
+// чтобы обязательно требовался отдельный вход по паролю (так просил пользователь).
 export async function registerUser({ email, password, displayName, city, phone }) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
   await updateProfile(cred.user, { displayName });
@@ -66,8 +68,7 @@ export async function registerUser({ email, password, displayName, city, phone }
     createdAt: serverTimestamp(),
   };
   await setDoc(doc(db, 'users', cred.user.uid), profile);
-  currentUser = cred.user;
-  currentProfile = { id: cred.user.uid, ...profile };
+  await signOut(auth);
   return cred.user;
 }
 
