@@ -8,6 +8,7 @@ import {
   where,
   orderBy,
   limit,
+  limitToLast,
   serverTimestamp,
   writeBatch,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -16,6 +17,7 @@ import { mountHeader, requireAuth } from './auth.js';
 import { CHAT_STATUS } from './constants.js';
 import { formatPrice, formatDateTime, escapeHtml, toast, qs, getParam, renderIcons } from './utils.js';
 import { confirmModal } from './modal.js';
+import { perfStart, perfEnd } from './perf.js';
 
 mountHeader();
 
@@ -82,12 +84,18 @@ const listQueries = [
   query(collection(db, 'chats'), where('ownerId', '==', user.uid), orderBy('lastMessageAt', 'desc'), limit(100)),
   query(collection(db, 'chats'), where('buyerId', '==', user.uid), orderBy('lastMessageAt', 'desc'), limit(100)),
 ];
+perfStart('Firestore: список чатов');
+let listQueriesLeft = listQueries.length;
 listQueries.forEach((q) => {
   onSnapshot(q, (snap) => {
     snap.docChanges().forEach((change) => {
       if (change.type === 'removed') chatsCache.delete(change.doc.id);
       else chatsCache.set(change.doc.id, change.doc.data());
     });
+    if (listQueriesLeft > 0) {
+      listQueriesLeft -= 1;
+      if (listQueriesLeft === 0) perfEnd('Firestore: список чатов', `${chatsCache.size} чатов`);
+    }
     renderList();
     if (activeChatId && chatsCache.has(activeChatId)) renderChatHeader();
     maybeAutoOpen();
@@ -115,8 +123,10 @@ function openChat(chatId) {
   }
 
   if (unsubMessages) unsubMessages();
+  // limitToLast — не открытый запрос всей истории переписки, а только последние N сообщений
+  // (важно на будущее: у активного чата их со временем могут накопиться сотни).
   unsubMessages = onSnapshot(
-    query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'asc')),
+    query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'asc'), limitToLast(200)),
     (snap) => renderMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
   );
 }

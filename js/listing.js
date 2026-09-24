@@ -24,6 +24,7 @@ import {
 import { ensureFavoritesLoaded, isFavorite, toggleFavorite } from './favorites.js';
 import { confirmModal } from './modal.js';
 import { openOrCreateChat } from './chat.js';
+import { perfStart, perfEnd } from './perf.js';
 
 mountHeader();
 
@@ -72,19 +73,28 @@ ensureFavoritesLoaded().then(() => {
 });
 
 function watchListing() {
+  perfStart('Firestore: объявление');
   const ref = doc(db, 'listings', listingId);
   onSnapshot(ref, async (snap) => {
+    const wasFirstLoad = listingData === null;
+    if (wasFirstLoad) perfEnd('Firestore: объявление', snap.exists() ? 'найдено' : 'не найдено');
     if (!snap.exists()) {
       els.loader.hidden = true;
       els.notFound.hidden = false;
       return;
     }
-    const wasFirstLoad = listingData === null;
     listingData = { id: snap.id, ...snap.data() };
     if (wasFirstLoad) {
-      ownerProfile = await getDoc(doc(db, 'users', listingData.ownerId)).then((s) => (s.exists() ? s.data() : null));
+      // Три независимых операции — раньше шли одна за другой (профиль продавца → похожие →
+      // отзывы), хотя ничего из этого друг от друга не зависит. Запускаем параллельно и не
+      // ждём ни одну из них перед первым рендером: город продавца — необязательное поле
+      // (render() и так подставляет city самого объявления, пока профиль не подгрузился).
       loadRelated(true);
       watchReviews();
+      getDoc(doc(db, 'users', listingData.ownerId)).then((s) => {
+        ownerProfile = s.exists() ? s.data() : null;
+        if (listingData) render();
+      });
     }
     render();
     els.loader.hidden = true;

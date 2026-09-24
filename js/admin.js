@@ -23,6 +23,7 @@ import { mountHeader, requireAdmin } from './auth.js';
 import { CATEGORIES, CITIES, LISTING_STATUS, CHAT_STATUS } from './constants.js';
 import { formatPrice, formatDate, formatDateTime, escapeHtml, debounce, toast, qs, renderIcons } from './utils.js';
 import { confirmModal } from './modal.js';
+import { perfStart, perfEnd } from './perf.js';
 
 mountHeader();
 
@@ -66,7 +67,9 @@ let allListings = [];
 async function loadListings() {
   const host = qs('#listings-table');
   host.innerHTML = '<div class="loader">Загрузка…</div>';
+  perfStart('Firestore: объявления (админка)');
   const snap = await getDocs(query(collection(db, 'listings'), orderBy('createdAt', 'desc'), limit(300)));
+  perfEnd('Firestore: объявления (админка)', `${snap.size} документов`);
   allListings = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   renderListingsTable(allListings);
 }

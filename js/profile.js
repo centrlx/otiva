@@ -19,6 +19,7 @@ import {
 } from './utils.js';
 import { ensureFavoritesLoaded, toggleFavorite } from './favorites.js';
 import { confirmModal } from './modal.js';
+import { perfStart, perfEnd } from './perf.js';
 
 mountHeader();
 
@@ -78,7 +79,13 @@ tabs.forEach((tab) => {
 // ---------- Мои объявления (realtime) ----------
 
 const myListingsQuery = query(collection(db, 'listings'), where('ownerId', '==', user.uid), orderBy('createdAt', 'desc'), limit(50));
+perfStart('Firestore: мои объявления');
+let myListingsFirstLoad = true;
 onSnapshot(myListingsQuery, (snap) => {
+  if (myListingsFirstLoad) {
+    myListingsFirstLoad = false;
+    perfEnd('Firestore: мои объявления', `${snap.size} документов`);
+  }
   if (snap.empty) {
     panels.listings.innerHTML = `<div class="empty-state"><h3>У вас пока нет объявлений</h3><a class="btn btn-primary" href="listing-form.html">Разместить первое</a></div>`;
     return;

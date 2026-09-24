@@ -17,18 +17,30 @@ import { CITIES } from './constants.js';
 import { renderIcons } from './utils.js';
 import { mountThemeSwitcher } from './theme.js';
 import { watchUnreadBadge } from './chat.js';
+import { perfStart, perfEnd } from './perf.js';
 
 let currentUser = null;
 let currentProfile = null;
 let resolveReady;
 const readyPromise = new Promise((res) => { resolveReady = res; });
 
+perfStart('Firebase Auth: определение пользователя');
 onAuthStateChanged(auth, async (user) => {
+  perfEnd('Firebase Auth: определение пользователя', user ? 'вошёл' : 'гость');
   currentUser = user;
-  currentProfile = user ? await fetchProfile(user.uid) : null;
+  if (user) {
+    currentProfile = await perfWrapProfile(user.uid);
+  } else {
+    currentProfile = null;
+  }
   resolveReady({ user: currentUser, profile: currentProfile });
   renderHeaderAuthArea();
 });
+
+function perfWrapProfile(uid) {
+  perfStart('Firestore: профиль пользователя');
+  return fetchProfile(uid).finally(() => perfEnd('Firestore: профиль пользователя'));
+}
 
 async function fetchProfile(uid) {
   const snap = await getDoc(doc(db, 'users', uid));

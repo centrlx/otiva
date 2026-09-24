@@ -14,6 +14,12 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-// Safari (и некоторые сети/блокировщики) рвут потоковый WebChannel-транспорт Firestore —
-// автоопределение long-polling чинит "Fetch API cannot load .../Listen/channel".
-export const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+// experimentalAutoDetectLongPolling каждый раз ЗАНОВО прогоняет пробную детекцию транспорта
+// (пробует потоковый WebChannel, ждёт, при неудаче откатывается на long-polling) — а поскольку
+// это multi-page app и на каждой странице сразу открывается realtime-бейдж непрочитанных
+// сообщений (см. chat.js/watchUnreadBadge, вызывается из auth.js на КАЖДОЙ странице), эта
+// детекция перезапускается при каждом переходе. Именно она и давала стабильные ~10с зависания
+// в сетях, где потоковый fetch не проходит (тот же класс проблемы, что ловили в Safari).
+// experimentalForceLongPolling пропускает детекцию и сразу использует long-polling —
+// без гонки/таймаута на каждой загрузке страницы.
+export const db = initializeFirestore(app, { experimentalForceLongPolling: true });

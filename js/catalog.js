@@ -16,6 +16,7 @@ import {
   getParam, renderIcons, toast,
 } from './utils.js';
 import { ensureFavoritesLoaded, isFavorite, toggleFavorite } from './favorites.js';
+import { perfStart, perfEnd } from './perf.js';
 
 mountHeader();
 
@@ -203,7 +204,9 @@ async function loadPage(reset) {
   try {
     const filters = currentFilters();
     const q = buildQuery(filters, cursor);
+    perfStart('Firestore: список объявлений');
     const snap = await getDocs(q);
+    perfEnd('Firestore: список объявлений', `${snap.size} документов`);
     if (myRequest !== requestId) return; // выбило более новым запросом
 
     snap.forEach((d) => {
