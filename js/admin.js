@@ -16,11 +16,10 @@ import {
   getAggregateFromServer,
   average,
   sum,
-  addDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { db } from './firebase-config.js';
 import { mountHeader, requireAdmin } from './auth.js';
-import { CATEGORIES, CITIES, LISTING_STATUS, CHAT_STATUS } from './constants.js';
+import { CATEGORIES, LISTING_STATUS, CHAT_STATUS } from './constants.js';
 import { formatPrice, formatDate, formatDateTime, escapeHtml, debounce, toast, qs, renderIcons } from './utils.js';
 import { confirmModal } from './modal.js';
 import { perfStart, perfEnd } from './perf.js';
@@ -59,8 +58,6 @@ tabs.forEach((tab) => {
 
 loadListings();
 loaded.listings = true;
-
-// ---------- Объявления ----------
 
 let allListings = [];
 
@@ -124,8 +121,6 @@ qs('#listings-search').addEventListener('input', debounce((e) => {
   renderListingsTable(term ? allListings.filter((l) => l.title.toLowerCase().includes(term)) : allListings);
 }, 250));
 
-// ---------- Пользователи ----------
-
 async function loadUsers() {
   const host = qs('#users-table');
   host.innerHTML = '<div class="loader">Загрузка…</div>';
@@ -162,8 +157,6 @@ async function loadUsers() {
     });
   });
 }
-
-// ---------- Сделки (чаты) ----------
 
 async function loadChats() {
   const host = qs('#chats-table');
@@ -221,14 +214,10 @@ async function loadChats() {
   });
 }
 
-// Модерация: читать переписку любых двух пользователей может только админ
-// (правила Firestore разрешают это отдельной веткой isAdmin() в chats/messages).
 let closeChatViewer = null;
 
 function openChatViewer(chat) {
   if (!chat) return;
-  // Если предыдущая модалка не была закрыта явно (клик на другую строку таблицы) —
-  // её realtime-подписка на сообщения иначе осталась бы висеть в фоне навсегда.
   closeChatViewer?.();
   let host = document.getElementById('admin-modal-host');
   if (!host) {
@@ -297,8 +286,6 @@ function openChatViewer(chat) {
   });
 }
 
-// ---------- Отзывы ----------
-
 async function loadReviews() {
   const host = qs('#reviews-table');
   host.innerHTML = '<div class="loader">Загрузка…</div>';
@@ -337,8 +324,6 @@ async function loadReviews() {
   }
 }
 
-// ---------- Статистика ----------
-
 async function loadStats() {
   const grid = qs('#stats-grid');
   grid.innerHTML = '<div class="loader">Считаем…</div>';
@@ -358,9 +343,7 @@ async function loadStats() {
         { avgPrice: average('price'), totalValue: sum('price') }
       );
       avgPriceHtml = tile(formatPrice(Math.round(agg.data().avgPrice || 0)), 'Средняя цена активных');
-    } catch (e) {
-      // агрегатные sum/average могут быть недоступны в некоторых окружениях — пропускаем плитку
-    }
+    } catch {}
 
     grid.innerHTML = [
       tile(listingsCount.data().count, 'Всего объявлений'),

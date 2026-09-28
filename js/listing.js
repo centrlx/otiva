@@ -63,8 +63,6 @@ let reviewFormInitialized = false;
 
 await authReady();
 watchListing();
-// Избранное грузим параллельно с объявлением, а не до него — иначе страница
-// объявления ждёт лишний сетевой запрос, прежде чем показать хоть что-то.
 ensureFavoritesLoaded().then(() => {
   syncFavoriteButton();
   document.querySelectorAll('#related-grid .favorite-btn[data-fav]').forEach((btn) => {
@@ -85,10 +83,6 @@ function watchListing() {
     }
     listingData = { id: snap.id, ...snap.data() };
     if (wasFirstLoad) {
-      // Три независимых операции — раньше шли одна за другой (профиль продавца → похожие →
-      // отзывы), хотя ничего из этого друг от друга не зависит. Запускаем параллельно и не
-      // ждём ни одну из них перед первым рендером: город продавца — необязательное поле
-      // (render() и так подставляет city самого объявления, пока профиль не подгрузился).
       loadRelated(true);
       watchReviews();
       getDoc(doc(db, 'users', listingData.ownerId)).then((s) => {
@@ -115,6 +109,7 @@ function render() {
     `<span class="tag">${escapeHtml(CATEGORY_MAP[d.category] || d.category)}</span>`,
     `<span class="tag">${escapeHtml(CONDITION_MAP[d.condition] || d.condition)}</span>`,
     `<span class="tag">${escapeHtml(d.city || '')}</span>`,
+    ...(typeof d.quantity === 'number' ? [`<span class="tag">В наличии: ${d.quantity} шт</span>`] : []),
     ...(d.tags || []).map((t) => `<span class="tag">#${escapeHtml(t)}</span>`),
   ].join('');
 
@@ -222,8 +217,6 @@ function renderActionArea() {
   }
 }
 
-// ---------- Отзывы ----------
-
 function watchReviews() {
   const q = query(collection(db, 'listings', listingId, 'reviews'), orderBy('createdAt', 'desc'));
   onSnapshot(q, (snap) => {
@@ -316,9 +309,6 @@ function wireStarPicker() {
   picker.addEventListener('mouseleave', () => paint(Number(picker.dataset.value)));
 }
 
-// editing !== null — открыта форма редактирования (кнопка «Изменить»).
-// Без аргумента функция сама решает: если у пользователя уже есть отзыв (myReviewCache),
-// показывает компактную подсказку вместо формы — оставить второй отзыв нельзя.
 function renderReviewForm(editing = null) {
   const user = getCurrentUser();
   const profile = getCurrentProfile();
@@ -365,8 +355,6 @@ function renderReviewForm(editing = null) {
     const text = qs('#review-text', els.reviewFormWrap).value.trim();
     if (!text) return;
     try {
-      // Id документа отзыва = uid автора — гарантирует не более одного отзыва на человека
-      // на уровне базы (и Firestore Rules), а не только клиентской проверкой.
       await setDoc(doc(db, 'listings', listingId, 'reviews', user.uid), {
         authorId: user.uid,
         authorName: profile?.displayName || user.email,
@@ -392,11 +380,8 @@ async function syncListingRating(reviews) {
   try {
     await updateDoc(doc(db, 'listings', listingId), { ratingAvg: rounded, reviewsCount: count });
   } catch (err) {
-    // могут не совпасть права, если это не автор изменения — безопасно игнорируем
   }
 }
-
-// ---------- Похожие объявления ----------
 
 let relatedCursor = null;
 let relatedItemsById = {};
@@ -435,9 +420,6 @@ async function loadRelated(reset) {
 
 els.relatedMoreBtn.addEventListener('click', () => loadRelated(false));
 
-// Один делегированный обработчик на грид вместо навешивания слушателя на каждую
-// карточку — иначе повторные вызовы loadRelated() при «Показать ещё» переслушивали бы
-// уже отрисованные карточки заново, и клик по сердечку слал бы дублирующиеся записи в Firestore.
 els.relatedGrid.addEventListener('click', async (e) => {
   const btn = e.target.closest('[data-fav]');
   if (!btn) return;

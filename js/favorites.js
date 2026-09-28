@@ -9,10 +9,6 @@ import {
 import { db } from './firebase-config.js';
 import { authReady, getCurrentUser } from './auth.js';
 
-// Избранное хранится в Firestore, в подколлекции users/{uid}/favorites —
-// приватные данные пользователя, id документа = id объявления (идемпотентно).
-// Кэш хранит целиком данные документов (не только id), чтобы страница профиля
-// могла отрисовать список избранного без повторного запроса той же коллекции.
 let cache = new Map();
 let loadPromise = null;
 
@@ -27,8 +23,6 @@ async function loadCache() {
   return cache;
 }
 
-// Дожидается авторизации и первой загрузки списка избранного текущего пользователя.
-// Вызывать перед рендером карточек, где нужно сразу показать правильное состояние сердечка.
 export function ensureFavoritesLoaded() {
   if (!loadPromise) loadPromise = loadCache();
   return loadPromise;
@@ -38,13 +32,11 @@ export function isFavorite(listingId) {
   return cache.has(listingId);
 }
 
-// Список избранного для страницы профиля — из уже загруженного кэша, без нового запроса.
 export function getFavorites() {
   return Array.from(cache.entries())
     .sort((a, b) => (b[1].createdAt?.toMillis?.() || 0) - (a[1].createdAt?.toMillis?.() || 0));
 }
 
-// Возвращает true/false (новое состояние) или null, если пользователь не авторизован.
 export async function toggleFavorite(listingId, listing = {}) {
   const user = getCurrentUser();
   if (!user) return null;

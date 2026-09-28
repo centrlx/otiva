@@ -46,7 +46,6 @@ categorySelect.insertAdjacentHTML('beforeend', CATEGORIES.map((c) => `<option va
 citySelect.insertAdjacentHTML('beforeend', CITIES.map((c) => `<option value="${c}">${c}</option>`).join(''));
 sortSelect.innerHTML = SORT_OPTIONS.map((s) => `<option value="${s.id}">${s.label}</option>`).join('');
 
-// Категории-пилюли над каталогом
 categoryStrip.innerHTML = CATEGORIES.map((c) => `
   <button type="button" class="category-pill" data-category="${c.id}">
     <i data-lucide="${c.icon}" class="icon"></i>
@@ -68,7 +67,6 @@ categoryStrip.addEventListener('click', (e) => {
   loadPage(true);
 });
 
-// Предзаполнение из URL (переход из хедера) и локального города
 const initialQuery = getParam('q');
 const initialCategory = getParam('category');
 if (initialQuery) searchInput.value = initialQuery;
@@ -144,10 +142,6 @@ function skeletonCardHtml() {
   `;
 }
 
-// Один делегированный обработчик на весь грид вместо навешивания слушателя на каждую
-// карточку — иначе повторные вызовы loadPage() при «Показать ещё» переслушивали бы
-// уже отрисованные карточки заново, и один клик по сердечку слал бы в Firestore
-// столько же записей/удалений, сколько раз до этого была нажата «Показать ещё».
 grid.addEventListener('click', async (e) => {
   const btn = e.target.closest('[data-fav]');
   if (!btn) return;
@@ -184,7 +178,7 @@ async function loadPage(reset) {
     perfStart('Firestore: список объявлений');
     const snap = await getDocs(q);
     perfEnd('Firestore: список объявлений', `${snap.size} документов`);
-    if (myRequest !== requestId) return; // выбило более новым запросом
+    if (myRequest !== requestId) return;
 
     snap.forEach((d) => {
       loadedDocs.push(d);
@@ -211,9 +205,6 @@ async function loadPage(reset) {
   }
 }
 
-// Сколько фильтров сейчас реально сужают выдачу (сортировка — не фильтр).
-// Показывается счётчиком в шапке панели и на мобильной кнопке «Фильтры»,
-// чтобы под свёрнутой шторкой не терялись забытые условия поиска.
 function syncFilterCount() {
   const f = currentFilters();
   const count = [f.search, f.category, f.city, f.condition, f.priceMin, f.priceMax]
@@ -246,7 +237,6 @@ qs('#f-reset').addEventListener('click', () => {
 
 loadMoreBtn.addEventListener('click', () => loadPage(false));
 
-// Мобильная выдвижная панель фильтров
 function openFilters() {
   filtersPanel.classList.add('is-open');
   filterBackdrop.classList.add('is-open');
@@ -260,8 +250,6 @@ qs('#filters-close').addEventListener('click', closeFilters);
 qs('#filters-apply').addEventListener('click', closeFilters);
 filterBackdrop.addEventListener('click', closeFilters);
 
-// Список избранного грузим параллельно, а не до объявлений — иначе каталог ждёт
-// лишний сетевой запрос, прежде чем показать хоть что-то.
 loadPage(true);
 ensureFavoritesLoaded().then(() => {
   document.querySelectorAll('.favorite-btn[data-fav]').forEach((btn) => {
@@ -270,8 +258,6 @@ ensureFavoritesLoaded().then(() => {
 });
 renderIcons();
 
-// Realtime: отслеживаем самые свежие объявления и показываем баннер,
-// если появилось что-то новее уже загруженного (без перезагрузки страницы).
 const liveQuery = query(
   collection(db, 'listings'),
   where('status', '==', 'active'),

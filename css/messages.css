@@ -8,8 +8,6 @@
   min-height: 460px;
 }
 
-/* ---------- Список чатов ---------- */
-
 .chat-list {
   overflow-y: auto;
   padding: var(--space-2);
@@ -77,8 +75,6 @@
 }
 
 .chat-list .pill { flex-shrink: 0; font-size: 10px; padding: 2px 6px; }
-
-/* ---------- Окно переписки ---------- */
 
 .chat-pane {
   display: flex;
@@ -169,6 +165,7 @@
   border-bottom-left-radius: var(--radius-xs);
   padding: var(--space-2) var(--space-3);
   align-self: flex-start;
+  box-shadow: var(--shadow-xs);
 }
 
 .chat-bubble--own {
@@ -206,6 +203,7 @@
   border: 1.5px solid var(--border);
   background: var(--surface);
   outline: none;
+  box-shadow: var(--shadow-xs);
   transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 

@@ -10,8 +10,6 @@
   align-items: start;
 }
 
-/* ---------- Панель фильтров ---------- */
-
 .filters {
   position: sticky;
   top: 84px;
@@ -48,8 +46,6 @@
   flex: 1;
 }
 
-/* Группы фильтров разделены линиями — так глазом видно, где кончается
-   один параметр поиска и начинается другой. */
 .filter-group {
   padding-bottom: var(--space-4);
   margin-bottom: var(--space-4);
@@ -64,14 +60,9 @@
 
 .filter-group .field:last-child { margin-bottom: 0; }
 
-/* Диапазон цены остаётся в две колонки и на узком экране: это одно
-   логическое поле «от — до», а не два независимых, и вертикально
-   разорванная пара читается хуже, чем просто две узкие ячейки. */
 .filters .field-row { grid-template-columns: 1fr 1fr; }
 
 .filters-foot { display: none; }
-
-/* ---------- Тулбар результатов ---------- */
 
 .catalog-toolbar {
   display: flex;
@@ -99,8 +90,6 @@
   flex-shrink: 0;
 }
 
-/* Сортировка вынесена из панели фильтров к результатам: ей пользуются
-   чаще остальных фильтров, и на мобильном она не должна прятаться в шторку. */
 .sort-control {
   display: flex;
   align-items: center;
@@ -125,8 +114,6 @@
   background-position: right var(--space-2) center;
 }
 
-/* ---------- Баннер новых объявлений ---------- */
-
 .live-banner {
   display: flex;
   align-items: center;
@@ -149,8 +136,6 @@
 @media (max-width: 860px) {
   .catalog-layout { grid-template-columns: 1fr; }
 
-  /* На мобильном фильтры — не уменьшенная копия десктопной колонки,
-     а нижняя шторка с собственной шапкой и закреплённой кнопкой применения. */
   .filters {
     position: fixed;
     top: auto;

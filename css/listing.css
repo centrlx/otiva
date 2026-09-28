@@ -34,8 +34,6 @@
   padding: 0;
 }
 
-/* Без фотографии пропорция 16/10 растягивает пустой серый блок на пол-экрана,
-   поэтому в этом случае высота фиксируется под размер заглушки. */
 .listing-gallery:not(:has(.photo-frame__img)) {
   aspect-ratio: auto;
   height: 220px;
@@ -48,7 +46,6 @@
   margin: var(--space-3) 0 0;
 }
 
-/* Цена — якорь всей страницы: самый крупный и тяжёлый элемент в карточке. */
 .listing-price {
   font-family: var(--font-display);
   font-size: var(--text-display);
@@ -71,8 +68,6 @@
   white-space: pre-wrap;
   line-height: 1.6;
 }
-
-/* ---------- Карточка продавца ---------- */
 
 .owner-card {
   padding: var(--space-5);
@@ -110,8 +105,6 @@
 .owner-controls { display: flex; flex-direction: column; gap: var(--space-2); }
 .owner-controls .field { margin-bottom: 0; }
 
-/* ---------- Отзывы ---------- */
-
 .reviews-card { padding: var(--space-6); }
 .reviews-card h3 { font-size: var(--text-h3); margin-bottom: var(--space-4); }
 
@@ -144,20 +137,12 @@
 
 .review-item__actions { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
 
-/* ---------- Похожие ---------- */
-
 .listing-related { margin-top: var(--space-8); }
 
 #related-grid:empty { display: none; }
 
-/* Сообщение «похожих нет» — это не карточка, оно должно занимать всю
-   ширину сетки, а не первую колонку шириной в одну карточку. */
 #related-grid > p { grid-column: 1 / -1; margin: 0; }
 
-/* На узком экране это не двухколоночная сетка в одну колонку, а своя
-   последовательность: фото → цена и описание → продавец с кнопкой «Написать»
-   → отзывы. Иначе главное действие оказывается под всей лентой отзывов.
-   display:contents раскрывает .listing-main, чтобы его дети попали в общий поток. */
 @media (max-width: 900px) {
   .listing-layout {
     display: flex;

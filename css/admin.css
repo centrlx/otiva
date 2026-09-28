@@ -9,6 +9,7 @@
   color: var(--ink);
   outline: none;
   margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-xs);
   transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 
@@ -16,8 +17,6 @@
 .admin-search:hover { border-color: var(--border-strong); }
 .admin-search:focus { border-color: var(--accent); box-shadow: var(--ring); }
 
-/* Таблица в обёртке со скроллом: на узком экране уезжает по горизонтали
-   сама таблица, а не вся страница. */
 .admin-table {
   width: 100%;
   border-collapse: separate;
@@ -25,6 +24,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-m);
+  box-shadow: var(--shadow-xs);
   overflow: hidden;
 }
 
@@ -75,8 +75,6 @@
 
 .admin-table__actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 
-/* ---------- Просмотр переписки (админ, read-only) ---------- */
-
 .admin-chat-modal {
   max-width: 560px;
   display: flex;
@@ -113,8 +111,6 @@
   margin-bottom: 2px;
 }
 
-/* ---------- Статистика ---------- */
-
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -126,6 +122,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-m);
   padding: var(--space-5);
+  box-shadow: var(--shadow-xs);
 }
 
 .stat-tile__value {
@@ -135,8 +132,7 @@
   letter-spacing: -0.02em;
   color: var(--ink);
   line-height: 1.1;
-  /* Денежные значения не должны переносить знак ₸ на отдельную строку —
-     из-за этого плитка со средней ценой выбивалась по высоте из остальных. */
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

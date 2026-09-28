@@ -22,15 +22,12 @@ function applyTheme(value) {
 function setTheme(value) {
   try {
     localStorage.setItem(KEY, value);
-  } catch {
-    // localStorage недоступен — тема применится только на текущую загрузку
-  }
+  } catch {}
   applyTheme(value);
 }
 
 let outsideClickBound = false;
 
-// Рисует кнопку-иконку в хедере, которая открывает попап выбора темы (как в GitHub).
 export function mountThemeSwitcher(host) {
   const current = getTheme();
   host.innerHTML = `

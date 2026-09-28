@@ -1,139 +1,306 @@
 # OTIVA — доска объявлений
 
-Учебный проект: доска объявлений (аналог Avito/OLX) на Firebase Firestore + Firebase Authentication, без бэкенда и без сборщика — чистые HTML/CSS/ES-модули.
+Доска объявлений для казахстанского рынка (аналог Avito/OLX): каталог, карточка объявления, чат покупателя с продавцом со сделкой внутри, личный кабинет и админ-панель. Полностью на **Firebase** (Firestore + Authentication) — без своего бэкенда, без сборщика, без npm. HTML/CSS/ES-модули напрямую в браузере.
+
+Живой пример того, что можно построить на одном Firestore + Security Rules, если сознательно проектировать схему данных под конкретные запросы, а не «просто сохранять объекты».
 
 ## Стек
 
 - **Firebase Authentication** — email/password.
-- **Firebase Firestore** — основное хранилище данных, real-time через `onSnapshot`.
-- **Firebase Security Rules** — `firestore.rules`.
-- **Vanilla JS (ES-модули)**, HTML5, CSS3, Google Fonts (Fraunces + Manrope).
-- Firebase SDK подключается модулями прямо с CDN (`gstatic.com`), без npm/бандлера.
+- **Firebase Firestore** — единственное хранилище данных, realtime через `onSnapshot`, офлайн-кэш через `persistentLocalCache`.
+- **Firebase Security Rules** — вся авторизация на уровне базы, а не только в клиентском коде.
+- **Vanilla JS (ES-модули)**, без React/Vue/сборщика. SDK подключается прямо с `gstatic.com` через `<script type="module">`.
+- Чистый CSS: дизайн-токены на custom properties, тёмная тема, mobile-first.
 
-## Структура
+## Структура проекта
 
 ```
-index.html                     редирект на pages/index.html (чтобы открывался корень сайта)
+index.html                редирект на pages/index.html
 pages/
-  index.html            каталог: поиск, фильтры, сортировка, пагинация, realtime-баннер новых объявлений
-  listing.html           карточка объявления: realtime-статус, отзывы (realtime CRUD), кнопка «Написать продавцу», похожие
-  listing-form.html       публикация / редактирование своего объявления
-  messages.html            чаты: список переписок + окно диалога, подтверждение/отклонение сделки
-  profile.html              личный кабинет: профиль, мои объявления (realtime), избранное, история сделок, мои отзывы
-  admin.html                 админ-панель: объявления, пользователи, сделки (чаты), отзывы, статистика
-  auth.html                   вход / регистрация / восстановление пароля
-css/                          дизайн-система (styles.css) + стили отдельных страниц — общие для всех pages/*.html
-js/                            вся логика (ES-модули), firebase-config.js — точка входа Firebase
+  index.html               каталог: поиск, фильтры, сортировка, пагинация, live-баннер новых объявлений
+  listing.html              карточка объявления, отзывы, похожие объявления
+  listing-form.html          публикация / редактирование своего объявления
+  messages.html               чаты: список + окно диалога, сделка внутри переписки
+  profile.html                 профиль, мои объявления, избранное, история сделок, мои отзывы
+  admin.html                    объявления, пользователи, сделки, отзывы, статистика
+  auth.html                      вход / регистрация / восстановление пароля
+css/                       styles.css — дизайн-система; остальные файлы — стили конкретных страниц
+js/
+  firebase-config.js        инициализация Firebase, единственное место с ключами проекта
+  constants.js                категории, города, статусы, размеры страниц
+  utils.js                     форматирование, toast-уведомления, общая разметка карточки объявления
+  auth.js                       состояние авторизации, guard-функции страниц, рендер шапки
+  modal.js                       кастомные модалки (замена window.confirm + двухшаговые сценарии)
+  chat.js, favorites.js, theme.js   отдельные независимые модули на одну ответственность каждый
+  catalog.js, listing.js, listing-form.js, messages.js, profile.js, admin.js   логика конкретных страниц
+firestore.rules            security rules
+firestore.indexes.json     составные индексы под все запросы каталога и профиля
 ```
 
-Все ссылки на css/js внутри `pages/*.html` — относительные (`../css/...`, `../js/...`); переходы между страницами (`href="listing.html?id=..."` и т.п.) — просто по имени файла, так как все они лежат рядом друг с другом внутри `pages/`.
+Каждая страница в `pages/` — самостоятельная точка входа: свой `<script type="module" src="../js/....js">`, ничего общего не импортируется неявно. Общий код (шапка, авторизация, модалки, форматирование) — обычные ES-модули, импортируемые explicitly там, где нужны.
 
-## Схема данных Firestore
+## Быстрый старт
+
+1. Создать проект в [Firebase Console](https://console.firebase.google.com), включить **Authentication → Email/Password** и **Firestore Database**.
+2. Вставить конфиг веб-приложения в `js/firebase-config.js` (объект `firebaseConfig`).
+3. Задеплоить правила и индексы:
+   ```bash
+   npx firebase-tools deploy --only firestore:rules,firestore:indexes
+   ```
+4. Поднять любой статический сервер из корня проекта (ES-модули требуют http-origin, `file://` не подходит):
+   ```bash
+   python3 -m http.server 8000
+   ```
+5. Открыть `http://localhost:8000/pages/index.html`.
+
+## Схема данных
 
 ```mermaid
 erDiagram
     USERS ||--o{ LISTINGS : "публикует"
     USERS ||--o{ CHATS : "участвует (buyer/owner)"
-    USERS ||--o{ HISTORY : "участвует"
     LISTINGS ||--o{ REVIEWS : "содержит"
     LISTINGS ||--o{ CHATS : "обсуждается"
     CHATS ||--o{ MESSAGES : "содержит"
+    USERS ||--o{ FAVORITES : "хранит (приватно)"
 
     USERS {
       string uid PK
-      string email
       string displayName
       string city
-      string phone
       string role "user | admin"
       number ratingAvg
       number ratingCount
-      timestamp createdAt
     }
     LISTINGS {
       string id PK
-      string title
-      string titleLower
-      array  searchTokens
-      string description
+      string titleLower "для prefix-поиска"
+      array  searchTokens "леммы заголовка+описания"
       string category
-      string condition "new | used"
       number price
-      string city
-      array  tags
-      array  images "внешние URL"
+      string status "active|reserved|sold|archived"
+      number quantity "опционально: остаток партии товара"
       string ownerId FK
       string ownerName "денормализовано"
-      string status "active|reserved|sold|archived"
-      number ratingAvg "денормализовано из reviews"
-      number reviewsCount "денормализовано из reviews"
-      timestamp createdAt
-      timestamp updatedAt
     }
     REVIEWS {
       string id PK "= uid автора"
-      string authorId FK
-      string authorName
       number rating "1..5"
-      string text
-      timestamp createdAt
     }
     CHATS {
       string id PK "= {listingId}_{buyerId}"
-      string listingId FK
-      string listingTitle "денорм."
-      number listingPrice "денорм."
-      string listingImage "денорм."
-      string ownerId FK
-      string ownerName
-      string buyerId FK
-      string buyerName
-      string status "pending | confirmed | cancelled"
-      string lastMessage "денорм. превью"
-      timestamp lastMessageAt
-      boolean unreadForOwner
-      boolean unreadForBuyer
-      timestamp createdAt
+      string status "pending|completed|cancelled"
+      boolean confirmedByOwner
+      boolean confirmedByBuyer
     }
     MESSAGES {
-      string id PK
       string senderId FK
-      string senderName
       string text
-      timestamp createdAt
     }
     HISTORY {
-      string id PK
       string listingId FK
-      string requesterId FK "= buyerId чата"
-      string ownerId FK
-      string status "completed | cancelled"
-      timestamp finishedAt
+      string status "completed|cancelled"
+    }
+    FAVORITES {
+      string listingId "денорм.: title/price/image"
     }
 ```
 
-`REVIEWS` — подколлекция `listings/{listingId}/reviews/{reviewId}`, id документа = `uid` автора (гарантирует не более одного отзыва на пользователя на уровне базы, а не только в UI), плюс `collectionGroup('reviews')` для агрегированного запроса «мои отзывы» в профиле и для модерации в админке.
+Ниже — не всё, что в схеме есть, а те решения, которые не были бы очевидны из одних только названий полей.
 
-Избранное — подколлекция `users/{uid}/favorites/{listingId}` (id документа = id объявления, идемпотентно). Поля денормализованы (`listingTitle`, `listingPrice`, `listingImage`, `listingStatus`, `city`) по тому же принципу, что и `chats`/`history` — вкладка «Избранное» в профиле читает только эту подколлекцию, без N дополнительных чтений `listings`. Полностью приватна: правила разрешают доступ только самому пользователю.
+## Что здесь есть и как это работает
 
-### Чат вместо системы броней
+### 1. Каталог: составной запрос вместо стороннего поискового движка
 
-Взаимодействие «покупатель ↔ продавец» устроено как переписка, а не разовая заявка: кнопка «Написать продавцу» на карточке объявления открывает (или создаёт) чат `chats/{listingId}_{buyerId}` — один тред на пару «объявление + покупатель», как на Avito. Внутри чата — обычная переписка (`chats/{id}/messages`, realtime) и статус сделки (`pending`), который видит только владелец объявления: он жмёт **«Подтвердить»** (объявление помечается проданным, `status → sold`) или **«Отклонить»**. Оба решения атомарно (`writeBatch`) пишут запись в `history` — это и есть «История действий» из ТЗ, с полным дублированием полей ради производительности (чтение истории не требует join'а с `listings`/`users`). Сам чат при этом не удаляется — переписка остаётся доступной участникам даже после решения по сделке.
+Firestore не умеет полнотекстовый поиск по подстроке. Вместо подключения Algolia/Typesense — токенизация на клиенте при сохранении объявления (`tokenize()` в `js/utils.js`) и `array-contains-any` по этим токенам при чтении:
 
-## Где используется каждое обязательное Firebase-требование
+```js
+// js/catalog.js — buildQuery()
+const tokens = filters.search ? tokenize(filters.search).slice(0, 10) : [];
 
-| Требование | Где реализовано |
-|---|---|
-| `onSnapshot` (real-time) | каталог — новые объявления ([js/catalog.js](js/catalog.js)); карточка объявления, её отзывы ([js/listing.js](js/listing.js)); список чатов и открытый диалог ([js/messages.js](js/messages.js)); бейдж непрочитанных в хедере ([js/chat.js](js/chat.js)); мои объявления ([js/profile.js](js/profile.js)) |
-| Пагинация | каталог: `limit(15)` + `startAfter` + «Показать ещё» ([js/catalog.js](js/catalog.js)); похожие объявления на детальной странице ([js/listing.js](js/listing.js)) |
-| Поиск через запросы Firestore | `titleLower`/`searchTokens` + `array-contains-any`, без сторонних сервисов ([js/catalog.js](js/catalog.js)) |
-| Оптимизация запросов | денормализация (`ownerName`, `listingTitle/Price/Image` и т.д. — не тянем связанные документы при рендере списков); агрегатные запросы `getCountFromServer`/`getAggregateFromServer` для статистики в админке вместо чтения всех документов ([js/admin.js](js/admin.js)) |
-| Индексы | [firestore.indexes.json](firestore.indexes.json) — под все комбинации фильтр+сортировка каталога, а также запросы «мои объявления/чаты/история/отзывы» |
-| Security Rules | [firestore.rules](firestore.rules) — разграничение `user`/`admin`, доступ к чату только у его участников, неизменяемый лог `history`, id отзыва/чата закреплён за автором на уровне правил |
+if (tokens.length) {
+  clauses.push(where('searchTokens', 'array-contains-any', tokens));
+  orderClauses = [orderBy('createdAt', 'desc')];
+} else if (filters.priceMin != null || filters.priceMax != null) {
+  // Firestore разрешает только одно поле с диапазонным условием (>=/<=) на запрос,
+  // и orderBy обязан начинаться с этого же поля — поэтому при заданном диапазоне
+  // цены сортировка каталога переключается на «по цене», даже если выбрана другая.
+  if (filters.priceMin != null) clauses.push(where('price', '>=', filters.priceMin));
+  if (filters.priceMax != null) clauses.push(where('price', '<=', filters.priceMax));
+  orderClauses = [orderBy('price', filters.sort === 'price_desc' ? 'desc' : 'asc')];
+} else {
+  orderClauses = [orderBy(sortDef.field, sortDef.dir)];
+}
+```
 
-## Известные ограничения (осознанные упрощения)
+Пагинация — курсорная (`startAfter(lastDoc).limit(15)`), а не `offset`: у Firestore нет `offset`, и курсор к тому же не «съезжает», если во время листания кто-то добавил новое объявление выше по сортировке.
 
-- Firestore не поддерживает полнотекстовый поиск по подстроке — поиск работает по токенам заголовка/описания (`array-contains-any`, до 10 токенов за запрос). Для продакшена обычно подключают Algolia/Typesense, но по условиям задания достаточно «через запросы Firestore».
-- Firestore разрешает только одно поле с диапазонным условием (`>=`/`<=`) на запрос, и `orderBy` должно начинаться с этого поля — поэтому при заданном диапазоне цены сортировка каталога автоматически переключается на «по цене» (см. `buildQuery` в [js/catalog.js](js/catalog.js)).
-- Без Cloud Functions / Admin SDK нельзя удалить сам аккаунт `Firebase Auth` с клиента — из админ-панели можно менять роль и удалять Firestore-профиль/контент пользователя, но не сам логин/пароль.
-- Изображения — только по внешней ссылке (Firebase Storage не входит в требуемый стек).
+Отдельно — realtime-баннер «Появились новые объявления»: лёгкий `onSnapshot` только по последнему документу (`limit(1)`), без полной пересборки списка при каждом чужом действии:
+
+```js
+const liveQuery = query(collection(db, 'listings'), where('status', '==', 'active'), orderBy('createdAt', 'desc'), limit(1));
+onSnapshot(liveQuery, (snap) => {
+  const topId = snap.docs[0]?.id;
+  if (topId !== initialLiveId && !loadedDocs.some((d) => d.id === topId)) liveBanner.hidden = false;
+});
+```
+
+### 2. Сделка внутри переписки: двустороннее подтверждение и автозавершение
+
+Вместо отдельной сущности «бронь» — обычный чат `chats/{listingId}_{buyerId}` (детерминированный id — повторный клик «Написать продавцу» просто открывает существующий тред, а не плодит дубликаты) со встроенным статусом сделки. Каждая сторона подтверждает **только свой флаг**:
+
+```js
+// js/messages.js — confirmMySide()
+const myField = isOwnerRole ? 'confirmedByOwner' : 'confirmedByBuyer';
+await updateDoc(doc(db, 'chats', activeChatId), { [myField]: true });
+if (otherConfirmed) tryAutoFinalize(activeChatId, { ...chat, [myField]: true });
+```
+
+Как только оба флага `true`, сделка **сама** переходит в `completed` — отдельной кнопки «Завершить» нет. Завершает её всегда клиент владельца (см. `firestore.rules` ниже — покупателю такое право не выдано), поэтому если последним подтвердил покупатель, `onSnapshot` у владельца сам вызовет `tryAutoFinalize` при следующем изменении документа:
+
+```js
+onSnapshot(q, (snap) => {
+  // ...
+  chatsCache.forEach((c, id) => tryAutoFinalize(id, c));
+});
+```
+
+`tryAutoFinalize` атомарно (`writeBatch`) переводит чат в `completed`, пишет запись в `history` и обновляет остаток товара:
+
+```js
+const listingSnap = await getDoc(listingRef);
+const hasQty = typeof listingSnap.data().quantity === 'number';
+const remainingQty = Math.max(0, (hasQty ? listingSnap.data().quantity : 1) - 1);
+const soldOut = remainingQty <= 0;
+
+const batch = writeBatch(db);
+batch.update(doc(db, 'chats', chatId), { status: 'completed' });
+batch.set(doc(collection(db, 'history')), { /* денормализованная запись сделки */ });
+batch.update(listingRef, { ...(hasQty && { quantity: remainingQty }), ...(soldOut && { status: 'sold' }) });
+await batch.commit();
+```
+
+Объявления без штучного учёта (услуги, недвижимость, транспорт) ведут себя так, как будто у них `quantity: 1` — каждая сделка сразу продаёт «всё». Если товара ещё много, объявление тихо остаётся активным с уменьшенным остатком и никто ничего не видит; если раскуплено подчистую — статус меняется на `sold`, и продавцу тут же предлагается модалка **«Оставить активным?»**, где он может сразу вписать реальный остаток, не уходя в форму редактирования (`js/modal.js → finalizeSaleModal`).
+
+Отклонить сделку можно с любой стороны, но только пока не подтвердили обе — это ограничение продублировано в `firestore.rules`, а не только в UI:
+
+```js
+allow update: if isSignedIn() && (
+  (isChatParticipant(resource) &&
+    !(resource.data.confirmedByOwner == true && resource.data.confirmedByBuyer == true) &&
+    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+    request.resource.data.status == 'cancelled')
+  || /* ...остальные ветки: подтверждение своего флага, завершение владельцем, превью сообщения */
+);
+```
+
+### 3. Кастомные модалки вместо `window.confirm` / `window.prompt`
+
+`js/modal.js` — два экспорта, оба возвращают `Promise`, оба рисуются в один и тот же `#modal-host`:
+
+- `confirmModal({ title, message, confirmText, danger })` — простая замена `confirm()`, `resolve(true|false)`.
+- `finalizeSaleModal({ listingTitle, hasQty })` — двухшаговый сценарий: выбор действия → (если объявление со штучным учётом) поле ввода нового остатка внутри той же модалки, без перехода на другую страницу. Возвращает `null` / `true` / `{ quantity }` — три разных исхода одним промисом, вызывающий код (`messages.js`) просто ветвится по типу результата.
+
+### 4. Избранное: Firestore-подколлекция с клиентским кэшем, не localStorage
+
+`users/{uid}/favorites/{listingId}` — id документа равен id объявления, поэтому «добавить в избранное» идемпотентно (`setDoc`, не нужно сначала проверять, есть ли уже). Поля денормализованы (`listingTitle`, `listingPrice`, `listingImage`), чтобы вкладка «Избранное» в профиле не делала N чтений `listings` — только один `getDocs` по подколлекции:
+
+```js
+// js/favorites.js
+export async function toggleFavorite(listingId, listing = {}) {
+  const ref = doc(db, 'users', user.uid, 'favorites', listingId);
+  if (cache.has(listingId)) { await deleteDoc(ref); cache.delete(listingId); return false; }
+  const data = { listingId, listingTitle: listing.title, listingPrice: listing.price, listingImage: listing.images?.[0], createdAt: serverTimestamp() };
+  await setDoc(ref, data);
+  cache.set(listingId, data);
+  return true;
+}
+```
+
+Модуль сам следит за тем, чтобы весь список загружался максимум один раз за сессию (`ensureFavoritesLoaded()` мемоизирует промис), а не при каждом рендере карточки.
+
+### 5. Один отзыв на человека — гарантия на уровне базы, не только в UI
+
+Id документа отзыва равен `uid` автора:
+
+```js
+await setDoc(doc(db, 'listings', listingId, 'reviews', user.uid), { authorId: user.uid, rating, text, createdAt: ... });
+```
+
+Второй отзыв от того же пользователя физически перезаписывает первый документ — оставить два отзыва невозможно, даже если обойти клиентский код. Это же условие продублировано в `firestore.rules`:
+
+```js
+match /reviews/{reviewId} {
+  allow create: if isSignedIn() && reviewId == request.auth.uid && request.resource.data.authorId == request.auth.uid;
+}
+```
+
+Отдельная деталь: вложенное правило `listings/{id}/reviews/{reviewId}` покрывает обычные чтения (по конкретному объявлению), но `collectionGroup('reviews')` — которым пользуются «Мои отзывы» в профиле и модерация в админке — это отдельный тип запроса, и Firestore требует под него отдельное top-level правило с wildcard-путём:
+
+```js
+match /{path=**}/reviews/{reviewId} {
+  allow read: if true;
+}
+```
+
+Без этой ветки `collectionGroup`-запрос целиком отклонялся бы как `permission-denied`, даже когда вложенное правило разрешает чтение.
+
+### 6. Admin-панель: агрегатные запросы вместо чтения всей коллекции
+
+Статистика в `admin.html` не читает документы, чтобы их посчитать — использует серверную агрегацию:
+
+```js
+// js/admin.js — loadStats()
+const [listingsCount, activeCount, usersCount] = await Promise.all([
+  getCountFromServer(collection(db, 'listings')),
+  getCountFromServer(query(collection(db, 'listings'), where('status', '==', 'active'))),
+  getCountFromServer(collection(db, 'users')),
+]);
+const agg = await getAggregateFromServer(
+  query(collection(db, 'listings'), where('status', '==', 'active')),
+  { avgPrice: average('price'), totalValue: sum('price') }
+);
+```
+
+Это один короткий сетевой запрос на каждую цифру, а не выгрузка тысяч документов с последующим `.length`/`.reduce()` в браузере.
+
+Второе: администратору можно посмотреть переписку любых двух пользователей (без права писать в неё) — реализовано отдельной read-only `onSnapshot`-подпиской, открывающейся поверх таблицы сделок, и отдельной веткой `isAdmin()` в правилах для `chats`/`messages`. Права записи туда у админа по-прежнему нет — `admin.js` только читает.
+
+### 7. Тема оформления: одна CSS-переменная решает всё
+
+Светлая/тёмная/системная тема — не три набора стилей, а один набор custom properties, переопределяемый в трёх местах: по умолчанию (`:root`), по системной настройке (`@media (prefers-color-scheme: dark)`), и принудительно (`:root[data-theme="dark"]`). Компоненты во всём CSS ссылаются только на переменные (`var(--surface)`, `var(--border)`), поэтому переключение темы — это буквально одна строка кода:
+
+```js
+// js/theme.js
+function applyTheme(value) {
+  const root = document.documentElement;
+  if (value === 'light' || value === 'dark') root.setAttribute('data-theme', value);
+  else root.removeAttribute('data-theme'); // 'system' — отдать решение медиа-запросу
+}
+```
+
+Выбор сохраняется в `localStorage` и применяется инлайн-скриптом в `<head>` **до** загрузки основного CSS — иначе при перезагрузке страницы в тёмной теме был бы видимый мигающий переход со светлой на тёмную.
+
+### 8. Realtime + офлайн-кэш в multi-page приложении
+
+Это MPA: каждый переход между страницами — полная перезагрузка и новая инициализация Firestore с нуля. Без кэша это означало бы, что даже повторное открытие уже просмотренного объявления снова ждёт сеть. Firestore настроен с `persistentLocalCache` — офлайн-хранилищем в IndexedDB:
+
+```js
+// js/firebase-config.js
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+});
+```
+
+SDK сначала мгновенно отдаёт то, что уже есть на диске, и досинхронизирует свежие данные в фоне через тот же `onSnapshot` — realtime не отключается, просто первый кадр страницы не пустой. `persistentMultipleTabManager` нужен, чтобы кэш не ломался при открытии сайта в нескольких вкладках одновременно.
+
+### 9. Индексы под реальные комбинации фильтров
+
+`firestore.indexes.json` — не сгенерирован вслепую, а построен под конкретные комбинации `where`/`orderBy`, которые реально складывает `buildQuery()` в каталоге (статус × категория × дата, статус × город × цена, статус × поиск по токенам × дата и т.д.), плюс отдельные индексы под `collectionGroup('reviews')` и коллекции `chats`/`history`, которые профиль и админка читают по `ownerId`/`buyerId`/`requesterId`.
+
+## Известные ограничения
+
+- Поиск — по токенам заголовка/описания (`array-contains-any`, до 10 токенов за раз), не полнотекстовый и не с опечатками. Для продакшена — Algolia/Typesense; здесь сознательный выбор «решить средствами самого Firestore».
+- Диапазон цены и сортировка по другому полю одновременно не работают — ограничение самого Firestore (одно поле с `>=`/`<=` на запрос), не баг: при активном диапазоне цены каталог сам переключает сортировку на «по цене».
+- Без Cloud Functions/Admin SDK нельзя удалить сам аккаунт Firebase Auth с клиента — админ управляет ролью и данными в Firestore, но не логином/паролем пользователя.
+- Изображения — только по внешней ссылке; Firebase Storage не входит в стек.

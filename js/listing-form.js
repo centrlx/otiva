@@ -5,10 +5,11 @@ import {
   updateDoc,
   collection,
   serverTimestamp,
+  deleteField,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { db } from './firebase-config.js';
 import { mountHeader, requireAuth } from './auth.js';
-import { CATEGORIES, CITIES } from './constants.js';
+import { CATEGORIES, CITIES, QTY_CATEGORIES } from './constants.js';
 import { tokenize, toast, qs, getParam } from './utils.js';
 
 mountHeader();
@@ -19,6 +20,13 @@ const { user, profile } = auth;
 
 qs('#f-category').innerHTML = CATEGORIES.map((c) => `<option value="${c.id}">${c.label}</option>`).join('');
 qs('#cities-list').innerHTML = CITIES.map((c) => `<option value="${c}"></option>`).join('');
+
+function syncQuantityField() {
+  const show = QTY_CATEGORIES.includes(qs('#f-category').value);
+  qs('#f-quantity-wrap').hidden = !show;
+}
+qs('#f-category').addEventListener('change', syncQuantityField);
+syncQuantityField();
 
 const editId = getParam('id');
 let editingDoc = null;
@@ -35,6 +43,7 @@ if (editId) {
       window.location.href = 'index.html';
     } else {
       fillForm(editingDoc);
+      syncQuantityField();
       qs('#form-title').textContent = 'Редактирование объявления';
       qs('#submit-btn').textContent = 'Сохранить изменения';
     }
@@ -50,6 +59,7 @@ function fillForm(d) {
   qs('#f-description').value = d.description || '';
   qs('#f-tags').value = (d.tags || []).join(', ');
   qs('#f-images').value = (d.images || []).join('\n');
+  qs('#f-quantity').value = typeof d.quantity === 'number' ? d.quantity : 1;
 }
 
 qs('#listing-form').addEventListener('submit', async (e) => {
@@ -67,6 +77,8 @@ qs('#listing-form').addEventListener('submit', async (e) => {
   const city = qs('#f-city').value.trim();
   const tags = qs('#f-tags').value.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 10);
   const images = qs('#f-images').value.split('\n').map((t) => t.trim()).filter(Boolean).slice(0, 6);
+  const hasQty = QTY_CATEGORIES.includes(category);
+  const quantity = hasQty ? Math.max(1, Number(qs('#f-quantity').value) || 1) : null;
 
   const payload = {
     title,
@@ -84,12 +96,13 @@ qs('#listing-form').addEventListener('submit', async (e) => {
 
   try {
     if (editingDoc) {
-      await updateDoc(doc(db, 'listings', editingDoc.id), payload);
+      await updateDoc(doc(db, 'listings', editingDoc.id), { ...payload, quantity: hasQty ? quantity : deleteField() });
       toast('Изменения сохранены', 'success');
       window.location.href = `listing.html?id=${editingDoc.id}`;
     } else {
       const ref = await addDoc(collection(db, 'listings'), {
         ...payload,
+        ...(hasQty ? { quantity } : {}),
         ownerId: user.uid,
         ownerName: profile?.displayName || user.email,
         status: 'active',

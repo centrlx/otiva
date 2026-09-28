@@ -44,8 +44,6 @@ const STOP_WORDS = new Set([
   'для', 'или', 'до', 'из', 'о', 'об',
 ]);
 
-// Разбивает текст на нормализованные токены (леммы упрощённо — только нижний регистр
-// и отсечение стоп-слов/коротких слов) для полей searchTokens в Firestore.
 export function tokenize(text) {
   if (!text) return [];
   const words = String(text)
@@ -92,8 +90,6 @@ export function renderIcons() {
   window.lucide?.createIcons();
 }
 
-// Карточка объявления — одинаковая разметка в каталоге и в блоке "похожие объявления"
-// на странице объявления, раньше была продублирована в обоих местах.
 export function listingCardHtml(id, d, isFav, categoryLabel) {
   const img = d.images?.[0];
   const statusPill = d.status !== 'active'
@@ -118,6 +114,7 @@ export function listingCardHtml(id, d, isFav, categoryLabel) {
         <div class="listing-card__meta">
           <span>${escapeHtml(d.city || '')}</span>
           <span>${escapeHtml(categoryLabel || '')}</span>
+          ${typeof d.quantity === 'number' && d.quantity > 1 ? `<span>${d.quantity} шт</span>` : ''}
         </div>
       </div>
     </a>

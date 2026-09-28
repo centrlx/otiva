@@ -12,8 +12,6 @@
 
 .form-card h1 { font-size: var(--text-h1); margin-bottom: var(--space-5); }
 
-/* Действия формы прижаты к низу карточки и отделены линией — видно,
-   что ниже ничего не осталось и форма закончилась. */
 .form-card .flex-between {
   margin-top: var(--space-6);
   padding-top: var(--space-4);

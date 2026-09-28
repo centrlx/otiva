@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   addDoc,
+  getDoc,
   updateDoc,
   onSnapshot,
   query,
@@ -16,7 +17,7 @@ import { db } from './firebase-config.js';
 import { mountHeader, requireAuth } from './auth.js';
 import { CHAT_STATUS } from './constants.js';
 import { formatPrice, formatDateTime, escapeHtml, toast, qs, getParam, renderIcons } from './utils.js';
-import { confirmModal } from './modal.js';
+import { confirmModal, finalizeSaleModal } from './modal.js';
 import { perfStart, perfEnd } from './perf.js';
 
 mountHeader();
@@ -99,8 +100,6 @@ listQueries.forEach((q) => {
     renderList();
     if (activeChatId && chatsCache.has(activeChatId)) renderChatHeader();
     maybeAutoOpen();
-    // Если где-то обе стороны уже подтвердили, а завершить может только владелец —
-    // проверяем это здесь же, а не только по клику (вдруг вторая сторона подтвердила уже после нас).
     chatsCache.forEach((c, id) => tryAutoFinalize(id, c));
   });
 });
@@ -123,8 +122,6 @@ function openChat(chatId) {
   }
 
   if (unsubMessages) unsubMessages();
-  // limitToLast — не открытый запрос всей истории переписки, а только последние N сообщений
-  // (важно на будущее: у активного чата их со временем могут накопиться сотни).
   unsubMessages = onSnapshot(
     query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'asc'), limitToLast(200)),
     (snap) => renderMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
@@ -142,7 +139,6 @@ function renderChatHeader() {
   let actionsHtml = '';
   if (chat.status === 'pending') {
     if (bothConfirmed) {
-      // Обе стороны уже подтвердили — отклонить больше нельзя, ждём финализации (её проводит владелец).
       actionsHtml = `<span class="muted" style="font-size:12.5px;">Обе стороны подтвердили — сделка завершается…</span>`;
     } else if (myConfirmed) {
       actionsHtml = `
@@ -181,8 +177,6 @@ function renderChatHeader() {
   renderIcons();
 }
 
-// Каждая сторона подтверждает только свой флаг. Как только оба true — сделка
-// автоматически завершается (см. tryAutoFinalize), отдельной кнопки «Завершить» больше нет.
 async function confirmMySide() {
   const chat = chatsCache.get(activeChatId);
   if (!chat) return;
@@ -198,8 +192,6 @@ async function confirmMySide() {
   }
 }
 
-// Отклонить может любая сторона, но только пока сделку не подтвердили оба —
-// это же ограничение продублировано в firestore.rules, а не только здесь.
 async function declineDeal() {
   const chat = chatsCache.get(activeChatId);
   if (!chat || (chat.confirmedByOwner && chat.confirmedByBuyer)) return;
@@ -234,16 +226,19 @@ async function declineDeal() {
 
 const finalizingChats = new Set();
 
-// Как только оба флага true — завершаем сделку. Пишет всегда только владелец
-// (правила Firestore не дают покупателю менять чужое объявление), поэтому если
-// подтвердил последним покупатель, сделку доведёт до конца клиент владельца —
-// сразу, если он сейчас в мессенджере, или при следующем открытии messages.html.
 async function tryAutoFinalize(chatId, chat) {
   if (chat.ownerId !== user.uid) return;
   if (chat.status !== 'pending' || !chat.confirmedByOwner || !chat.confirmedByBuyer) return;
   if (finalizingChats.has(chatId)) return;
   finalizingChats.add(chatId);
   try {
+    const listingRef = doc(db, 'listings', chat.listingId);
+    const listingSnap = await getDoc(listingRef);
+    const listingData = listingSnap.exists() ? listingSnap.data() : {};
+    const hasQty = typeof listingData.quantity === 'number';
+    const remainingQty = Math.max(0, (hasQty ? listingData.quantity : 1) - 1);
+    const soldOut = remainingQty <= 0;
+
     const batch = writeBatch(db);
     batch.update(doc(db, 'chats', chatId), { status: 'completed' });
     batch.set(doc(collection(db, 'history')), {
@@ -258,9 +253,22 @@ async function tryAutoFinalize(chatId, chat) {
       status: 'completed',
       finishedAt: serverTimestamp(),
     });
-    batch.update(doc(db, 'listings', chat.listingId), { status: 'sold', updatedAt: serverTimestamp() });
+    const listingUpdate = { updatedAt: serverTimestamp() };
+    if (hasQty) listingUpdate.quantity = remainingQty;
+    if (soldOut) listingUpdate.status = 'sold';
+    batch.update(listingRef, listingUpdate);
     await batch.commit();
+
     if (chatId === activeChatId) toast('Сделка завершена!', 'success');
+
+    if (soldOut) {
+      const choice = await finalizeSaleModal({ listingTitle: chat.listingTitle, hasQty });
+      if (choice !== null) {
+        const revive = { status: 'active', updatedAt: serverTimestamp() };
+        if (hasQty && typeof choice === 'object') revive.quantity = choice.quantity;
+        await updateDoc(listingRef, revive).catch((err) => toast('Ошибка: ' + err.message, 'error'));
+      }
+    }
   } catch (err) {
     console.error('auto-finalize failed:', err);
   } finally {

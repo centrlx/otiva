@@ -1,5 +1,4 @@
-/* Шрифт Inter подключается через <link> в <head> каждой страницы (не через @import
-   здесь) — так браузер начинает грузить его параллельно с этим файлом, а не после. */
+
 
 :root {
   --bg: #f7f7f8;
@@ -8,8 +7,8 @@
   --ink: #17181a;
   --ink-soft: #55585e;
   --ink-faint: #8a8d93;
-  --border: #e7e7ea;
-  --border-strong: #d7d7db;
+  --border: #f0f0f1;
+  --border-strong: #e4e4e6;
   --primary: #17181a;
   --primary-dark: #000000;
   --primary-soft: #eef0f1;
@@ -26,8 +25,6 @@
   --inverse-bg-hover: #000000;
   --inverse-fg: #ffffff;
 
-  /* Сетка отступов: один шаг = 4px. Все padding/gap/margin берутся отсюда,
-     чтобы не появлялись случайные 13px и 17px. */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -51,7 +48,6 @@
   --shadow: 0 16px 32px -18px rgba(23, 24, 26, 0.22);
   --shadow-lg: 0 24px 48px -24px rgba(23, 24, 26, 0.32);
 
-  /* Типографическая шкала */
   --text-display: 30px;
   --text-h1: 24px;
   --text-h2: 19px;
@@ -74,8 +70,6 @@
   color-scheme: light;
 }
 
-/* Тёмная тема: применяется либо по системной настройке (когда пользователь явно
-   не выбрал "светлую"), либо принудительно через [data-theme="dark"]. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0c0d0f;
@@ -84,8 +78,8 @@
     --ink: #edeef0;
     --ink-soft: #9a9ca3;
     --ink-faint: #6c6e75;
-    --border: #2b2c31;
-    --border-strong: #3a3b41;
+    --border: #1f2023;
+    --border-strong: #2a2b30;
     --primary: #edeef0;
     --primary-dark: #ffffff;
     --primary-soft: #232428;
@@ -118,8 +112,8 @@
   --ink: #edeef0;
   --ink-soft: #9a9ca3;
   --ink-faint: #6c6e75;
-  --border: #2b2c31;
-  --border-strong: #3a3b41;
+  --border: #1f2023;
+  --border-strong: #2a2b30;
   --primary: #edeef0;
   --primary-dark: #ffffff;
   --primary-soft: #232428;
@@ -146,8 +140,10 @@
 
 * { box-sizing: border-box; }
 
-/* .panel и т.п. задают display:flex, который иначе перебивает
-   встроенное правило браузера [hidden]{display:none} при переключении вкладок. */
+*, *::before, *::after {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
 [hidden] { display: none !important; }
 
 html, body {
@@ -192,8 +188,6 @@ button, input, select, textarea {
   color: inherit;
 }
 
-/* Базовое кольцо фокуса для клавиатурной навигации. Компоненты ниже
-   переопределяют его на более аккуратное box-shadow-кольцо. */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -212,8 +206,6 @@ button, input, select, textarea {
   margin: 0 auto;
   padding: 0 var(--space-6);
 }
-
-/* ---------- Header ---------- */
 
 .site-header {
   background: var(--surface);
@@ -263,6 +255,7 @@ button, input, select, textarea {
   padding: 4px 5px 4px var(--space-4);
   min-width: 180px;
   max-width: 520px;
+  box-shadow: var(--shadow-xs);
   transition: border-color var(--t-fast), background var(--t-fast), box-shadow var(--t-fast);
 }
 
@@ -367,8 +360,6 @@ button, input, select, textarea {
 
 .theme-switcher { position: relative; }
 
-/* ---------- Dropdown menu ---------- */
-
 .theme-menu {
   position: absolute;
   top: calc(100% + var(--space-2));
@@ -442,10 +433,6 @@ button, input, select, textarea {
   flex-shrink: 0;
 }
 
-/* ---------- Buttons ----------
-   Одна система: .btn + вариант (primary/secondary/ghost/outline/danger)
-   + размер (btn-sm / btn-lg) + модификаторы (btn-block / btn-icon / is-loading). */
-
 .btn {
   display: inline-flex;
   align-items: center;
@@ -479,6 +466,7 @@ button, input, select, textarea {
   background: var(--surface);
   color: var(--ink);
   border-color: var(--border);
+  box-shadow: var(--shadow-xs);
 }
 .btn-ghost:hover { border-color: var(--border-strong); background: var(--surface-2); }
 .btn-ghost:active { background: var(--primary-soft); }
@@ -519,8 +507,6 @@ button, input, select, textarea {
   transform: none;
 }
 
-/* Состояние загрузки: текст скрывается, в центре крутится спиннер.
-   Ставится добавлением класса is-loading, разметку менять не нужно. */
 .btn.is-loading { color: transparent !important; pointer-events: none; }
 
 .btn.is-loading::after {
@@ -555,15 +541,12 @@ button, input, select, textarea {
 
 .link-btn:hover { color: var(--accent); text-decoration-color: var(--accent); }
 
-/* ---------- Cards ---------- */
-
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-m);
+  box-shadow: var(--shadow-xs);
 }
-
-/* ---------- Forms ---------- */
 
 .field { margin-bottom: var(--space-4); }
 
@@ -586,6 +569,7 @@ button, input, select, textarea {
   background: var(--surface);
   color: var(--ink);
   outline: none;
+  box-shadow: var(--shadow-xs);
   transition: border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
 }
 
@@ -627,15 +611,12 @@ button, input, select, textarea {
   line-height: 1.5;
 }
 
-/* Поля ввода чисел без стрелок-спиннеров — в фильтре цены они только мешают. */
 .field input[type="number"]::-webkit-outer-spin-button,
 .field input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .field input[type="number"] { -moz-appearance: textfield; }
 
 .field input[type="search"]::-webkit-search-cancel-button { cursor: pointer; }
 
-/* Невалидное поле подсвечивается штатной браузерной валидацией форм
-   (required/minlength в разметке), отдельный класс для этого не нужен. */
 .field input:user-invalid,
 .field textarea:user-invalid { border-color: var(--danger); }
 
@@ -644,8 +625,6 @@ button, input, select, textarea {
 
 .field-hint { font-size: var(--text-caption); color: var(--ink-faint); margin-top: var(--space-1); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
-
-/* ---------- Badges / pills / chips ---------- */
 
 .pill {
   display: inline-flex;
@@ -662,8 +641,6 @@ button, input, select, textarea {
 .pill--active { background: var(--success-soft); color: var(--success); }
 .pill--reserved { background: var(--warning-soft); color: var(--warning); }
 
-/* У «завершённых» статусов нет своего цвета, поэтому их отделяет рамка —
-   иначе серый текст на сером фоне читается как отключённая подпись. */
 .pill--sold, .pill--completed, .pill--archived {
   background: var(--surface-2);
   color: var(--ink-soft);
@@ -673,7 +650,6 @@ button, input, select, textarea {
 .pill--confirmed { background: var(--success-soft); color: var(--success); }
 .pill--cancelled { background: var(--danger-soft); color: var(--danger); }
 
-/* Счётчик (например, количество активных фильтров). */
 .count-badge {
   display: inline-flex;
   align-items: center;
@@ -699,8 +675,6 @@ button, input, select, textarea {
   color: var(--ink-soft);
 }
 
-/* ---------- Category strip ---------- */
-
 .category-strip {
   display: flex;
   gap: var(--space-2);
@@ -719,30 +693,28 @@ button, input, select, textarea {
   gap: 7px;
   flex-shrink: 0;
   scroll-snap-align: start;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-pill);
-  border: 1.5px solid var(--border);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-s);
+  border: none;
   background: var(--surface);
+  box-shadow: var(--shadow-xs);
   font-weight: 600;
   font-size: var(--text-sm);
   color: var(--ink);
   cursor: pointer;
-  transition: border-color var(--t-fast), background var(--t-fast), color var(--t-fast);
+  transition: background var(--t-fast), color var(--t-fast);
 }
 
 .category-pill .icon { width: 16px; height: 16px; color: var(--ink-faint); }
 
-.category-pill:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.category-pill:hover { background: var(--surface-2); }
 .category-pill:focus-visible { outline: none; box-shadow: var(--ring); }
 
 .category-pill.is-active {
   background: var(--inverse-bg);
-  border-color: var(--inverse-bg);
   color: var(--inverse-fg);
 }
 .category-pill.is-active .icon { color: var(--inverse-fg); }
-
-/* ---------- Page layout ---------- */
 
 main { flex: 1; }
 
@@ -798,8 +770,6 @@ main { flex: 1; }
   animation: spin 0.7s linear infinite;
 }
 
-/* ---------- Listing cards / grid (каталог и блок «похожие») ---------- */
-
 .listing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(208px, 1fr));
@@ -816,6 +786,7 @@ main { flex: 1; }
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: var(--shadow-xs);
   transition: border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
 }
 
@@ -852,8 +823,6 @@ main { flex: 1; }
 
 .listing-card__status .pill { box-shadow: var(--shadow-xs); }
 
-/* Полное фото без обрезки: размытая увеличенная копия фоном + чёткое фото поверх (object-fit: contain) */
-
 .photo-frame__bg {
   position: absolute;
   inset: -14px;
@@ -880,7 +849,6 @@ main { flex: 1; }
   flex: 1;
 }
 
-/* Цена — главный элемент карточки, поэтому она крупнее и тяжелее заголовка. */
 .listing-card__price {
   font-family: var(--font-display);
   font-size: 18px;
@@ -918,12 +886,8 @@ main { flex: 1; }
   white-space: nowrap;
 }
 
-/* Город важнее категории (её уже видно по фильтру), поэтому при нехватке
-   ширины первым сжимается и обрезается название категории, а не города. */
 .listing-card__meta span:first-child { flex-shrink: 0; max-width: 62%; }
 .listing-card__meta span:last-child { margin-left: auto; min-width: 0; }
-
-/* ---------- Skeleton ---------- */
 
 .skeleton {
   background: linear-gradient(100deg, var(--surface-2) 30%, var(--border-strong) 45%, var(--surface-2) 60%);
@@ -947,8 +911,6 @@ main { flex: 1; }
 .skeleton-card__img { aspect-ratio: 4 / 3; border-radius: 0; }
 .skeleton-card__body { padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
 .skeleton-line { height: 11px; }
-
-/* ---------- Tabs ---------- */
 
 .tabs {
   display: flex;
@@ -978,16 +940,12 @@ main { flex: 1; }
 .tab:focus-visible { outline: none; color: var(--ink); box-shadow: 0 2px 0 var(--accent); }
 .tab.is-active { color: var(--ink); border-bottom-color: var(--accent); }
 
-/* ---------- Inline form feedback ---------- */
-
 .auth-note {
   margin: var(--space-3) 0 0;
   font-size: var(--text-sm);
   color: var(--accent-dark);
   min-height: 18px;
 }
-
-/* ---------- Footer ---------- */
 
 .site-footer {
   background: var(--surface);
@@ -1004,8 +962,6 @@ main { flex: 1; }
   flex-wrap: wrap;
   gap: var(--space-3);
 }
-
-/* ---------- Modal ---------- */
 
 .modal-backdrop {
   position: fixed;
@@ -1048,8 +1004,6 @@ main { flex: 1; }
   border-top: 1px solid var(--border);
 }
 
-/* ---------- Star rating picker ---------- */
-
 .star-picker {
   display: inline-flex;
   gap: var(--space-1);
@@ -1071,8 +1025,6 @@ main { flex: 1; }
 .star-picker__btn:focus-visible { outline: none; box-shadow: var(--ring); }
 .star-picker__btn:hover, .star-picker__btn.is-filled { color: var(--accent); }
 .star-picker__btn.is-filled .icon { fill: var(--accent); }
-
-/* ---------- Toast ---------- */
 
 .toast-host {
   position: fixed;
@@ -1100,13 +1052,8 @@ main { flex: 1; }
 
 .toast--visible { opacity: 1; transform: translateY(0); }
 
-/* В светлой теме success/danger — тёмные заливки, в тёмной — светлые.
-   --inverse-fg меняется вместе с темой и остаётся читаемым в обоих случаях,
-   тогда как жёстко заданный белый текст в тёмной теме почти сливался с фоном. */
 .toast--error { background: var(--danger); color: var(--inverse-fg); }
 .toast--success { background: var(--success); color: var(--inverse-fg); }
-
-/* ---------- Favorite button ---------- */
 
 .favorite-btn {
   position: absolute;
@@ -1133,8 +1080,6 @@ main { flex: 1; }
 .favorite-btn.is-active { color: var(--accent); }
 .favorite-btn.is-active .icon { fill: var(--accent); }
 
-/* ---------- Filter drawer (mobile) ---------- */
-
 .filters-toggle { display: none; }
 
 .filter-backdrop {
@@ -1147,8 +1092,6 @@ main { flex: 1; }
 
 .filter-backdrop.is-open { display: block; }
 
-/* ---------- Utility ---------- */
-
 .text-center { text-align: center; }
 .muted { color: var(--ink-faint); }
 .stars { color: var(--accent); letter-spacing: 1px; font-size: var(--text-caption); }
@@ -1156,11 +1099,9 @@ main { flex: 1; }
 .gap-8 { gap: var(--space-2); }
 .mt-0 { margin-top: 0; }
 
-/* ---------- Responsive ---------- */
-
 @media (max-width: 1100px) {
   .header-cta__text { display: none; }
-  .header-cta { padding: 0; width: var(--control-h); border-radius: 50%; }
+  .header-cta { padding: 0; width: var(--control-h-sm); border-radius: 50%; }
   .user-chip__name { display: none; }
   .user-chip { padding: 5px; }
 }
@@ -1190,8 +1131,6 @@ main { flex: 1; }
   .toast-host { left: var(--space-4); right: var(--space-4); bottom: var(--space-4); }
   .toast { max-width: none; }
 
-  /* Модалка на мобильном ведёт себя как bottom sheet — так до кнопок
-     дотягиваешься большим пальцем, а не тянешься в центр экрана. */
   .modal-backdrop { align-items: flex-end; padding: 0; }
 
   .modal-card {

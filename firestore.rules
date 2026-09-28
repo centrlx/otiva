@@ -16,37 +16,30 @@ service cloud.firestore {
       return isSignedIn() && (chatResource.data.buyerId == request.auth.uid || chatResource.data.ownerId == request.auth.uid);
     }
 
-    // ---------- users ----------
     match /users/{userId} {
-      // Имя/город/рейтинг продавца должны быть видны всем на витрине объявлений.
       allow read: if true;
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isAdmin() ||
         (isSignedIn() && request.auth.uid == userId && request.resource.data.role == resource.data.role);
       allow delete: if isAdmin();
 
-      // Избранное конкретного пользователя — полностью приватное, видит и пишет только он сам.
       match /favorites/{favoriteId} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
       }
     }
 
-    // ---------- listings ----------
     match /listings/{listingId} {
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update: if isSignedIn() && (
         resource.data.ownerId == request.auth.uid ||
         isAdmin() ||
-        // разрешаем пересчёт рейтинга любому автору отзыва — только эти два поля
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingAvg', 'reviewsCount'])
       );
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
 
       match /reviews/{reviewId} {
         allow read: if true;
-        // Id документа обязан совпадать с uid автора — не более одного отзыва на пользователя,
-        // гарантировано на уровне базы (клиент использует setDoc(..., 'reviews', uid)).
         allow create: if isSignedIn()
           && reviewId == request.auth.uid
           && request.resource.data.authorId == request.auth.uid;
@@ -54,26 +47,17 @@ service cloud.firestore {
       }
     }
 
-    // Вложенное правило выше покрывает обычные обращения по известному родителю
-    // (get конкретного отзыва, list внутри известного listingId), но collectionGroup('reviews')
-    // (админка и «Мои отзывы» в профиле) — это отдельный тип запроса, и Firestore требует
-    // под него отдельное top-level правило с wildcard-путём, иначе такой запрос целиком
-    // отклоняется как permission-denied, даже если вложенное правило разрешает read: true.
     match /{path=**}/reviews/{reviewId} {
       allow read: if true;
     }
 
-    // ---------- chats (переписка покупателя с продавцом по объявлению) ----------
     match /chats/{chatId} {
-      // resource == null — документа ещё нет (клиент проверяет getDoc перед созданием чата,
-      // "не найдено" не должно превращаться в permission-denied).
       allow read: if isSignedIn() && (
         resource == null ||
         resource.data.buyerId == request.auth.uid ||
         resource.data.ownerId == request.auth.uid ||
         isAdmin()
       );
-      // Id чата = "{listingId}_{buyerId}" — один чат на пару (объявление, покупатель).
       allow create: if isSignedIn()
         && request.resource.data.buyerId == request.auth.uid
         && request.resource.data.ownerId != request.auth.uid
@@ -81,23 +65,18 @@ service cloud.firestore {
         && chatId == (request.resource.data.listingId + '_' + request.auth.uid);
       allow update: if isSignedIn() && (
         isAdmin() ||
-        // покупатель подтверждает только свою сторону
         (resource.data.buyerId == request.auth.uid &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confirmedByBuyer'])) ||
-        // владелец подтверждает только свою сторону
         (resource.data.ownerId == request.auth.uid &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confirmedByOwner'])) ||
-        // завершить (completed) может только владелец, и только когда ОБЕ стороны уже подтвердили
         (resource.data.ownerId == request.auth.uid &&
           resource.data.confirmedByOwner == true && resource.data.confirmedByBuyer == true &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
           request.resource.data.status == 'completed') ||
-        // отклонить может любой участник, но только пока не подтвердили ОБЕ стороны
         (isChatParticipant(resource) &&
           !(resource.data.confirmedByOwner == true && resource.data.confirmedByBuyer == true) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
           request.resource.data.status == 'cancelled') ||
-        // любой из участников — превью последнего сообщения и свой флаг непрочитанного
         (isChatParticipant(resource) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'lastMessageAt', 'unreadForOwner', 'unreadForBuyer']))
       );
@@ -119,7 +98,6 @@ service cloud.firestore {
       }
     }
 
-    // ---------- history (архив завершённых/отменённых броней) ----------
     match /history/{historyId} {
       allow read: if isSignedIn() && (
         resource.data.requesterId == request.auth.uid ||
@@ -131,7 +109,7 @@ service cloud.firestore {
         request.resource.data.ownerId == request.auth.uid ||
         isAdmin()
       );
-      allow update: if false; // неизменяемый лог
+      allow update: if false;
       allow delete: if isAdmin();
     }
   }

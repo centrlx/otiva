@@ -76,8 +76,6 @@ tabs.forEach((tab) => {
   });
 });
 
-// ---------- Мои объявления (realtime) ----------
-
 const myListingsQuery = query(collection(db, 'listings'), where('ownerId', '==', user.uid), orderBy('createdAt', 'desc'), limit(50));
 perfStart('Firestore: мои объявления');
 let myListingsFirstLoad = true;
@@ -117,8 +115,6 @@ function listingRow(id, d) {
   `;
 }
 
-// ---------- Избранное (Firestore: users/{uid}/favorites, денормализовано) ----------
-
 async function loadFavorites() {
   panels.favorites.innerHTML = '<div class="loader">Загрузка…</div>';
   await ensureFavoritesLoaded();
@@ -157,8 +153,6 @@ async function loadFavorites() {
   renderIcons();
 }
 
-// ---------- История ----------
-
 async function loadHistory() {
   panels.history.innerHTML = '<div class="loader">Загрузка…</div>';
   const [asRequester, asOwner] = await Promise.all([
@@ -187,8 +181,6 @@ async function loadHistory() {
     `)
     .join('');
 }
-
-// ---------- Мои отзывы ----------
 
 async function loadReviews() {
   panels.reviews.innerHTML = '<div class="loader">Загрузка…</div>';

@@ -11,14 +11,10 @@ import {
 import { db } from './firebase-config.js';
 import { getCurrentUser, getCurrentProfile } from './auth.js';
 
-// Один чат на пару (объявление, покупатель) — детерминированный id,
-// поэтому повторный клик «Написать продавцу» просто открывает существующий чат.
 function chatIdFor(listingId, buyerId) {
   return `${listingId}_${buyerId}`;
 }
 
-// Создаёт чат при первом обращении (get-then-set, а не upsert — чтобы повторные
-// визиты не пытались переписать поля, которые правила разрешают менять только через update).
 export async function openOrCreateChat(listing) {
   const user = getCurrentUser();
   if (!user) return null;
@@ -49,7 +45,6 @@ export async function openOrCreateChat(listing) {
   return chatId;
 }
 
-// Живой бейдж непрочитанных чатов для иконки в хедере.
 export function watchUnreadBadge(onChange) {
   const user = getCurrentUser();
   if (!user) return;

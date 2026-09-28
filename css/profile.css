@@ -17,8 +17,6 @@
 
 .panel { display: flex; flex-direction: column; gap: var(--space-2); }
 
-/* Строка списка: используется для объявлений, избранного, истории и отзывов —
-   одна разметка на все вкладки профиля. */
 .mini-row {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -27,6 +25,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  box-shadow: var(--shadow-xs);
   transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 
@@ -67,8 +66,6 @@
 }
 
 @media (max-width: 560px) {
-  /* На телефоне действия переносятся под текст, иначе название сжимается
-     до нечитаемых двух слов ради кнопок справа. */
   .mini-row { flex-wrap: wrap; }
   .mini-row__actions { width: 100%; }
   .mini-row__actions .btn { flex: 1; }

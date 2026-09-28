@@ -17,6 +17,8 @@ export const CATEGORIES = [
 
 export const CATEGORY_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.label]));
 
+export const QTY_CATEGORIES = ['electronics', 'home', 'fashion', 'hobby', 'animals', 'kids', 'other'];
+
 export const CONDITIONS = [
   { id: 'new', label: 'Новое' },
   { id: 'used', label: 'Б/у' },
