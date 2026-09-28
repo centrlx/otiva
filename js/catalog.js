@@ -32,6 +32,8 @@ const categoryStrip = qs('#category-strip');
 
 const filtersPanel = qs('#filters');
 const filterBackdrop = qs('#filter-backdrop');
+const filtersCount = qs('#filters-count');
+const filtersCountMobile = qs('#filters-count-mobile');
 const categorySelect = qs('#f-category');
 const citySelect = qs('#f-city');
 const conditionSelect = qs('#f-condition');
@@ -164,6 +166,7 @@ grid.addEventListener('click', async (e) => {
 async function loadPage(reset) {
   if (loading) return;
   loading = true;
+  syncFilterCount();
   const myRequest = ++requestId;
   if (reset) {
     cursor = null;
@@ -208,6 +211,19 @@ async function loadPage(reset) {
   }
 }
 
+// Сколько фильтров сейчас реально сужают выдачу (сортировка — не фильтр).
+// Показывается счётчиком в шапке панели и на мобильной кнопке «Фильтры»,
+// чтобы под свёрнутой шторкой не терялись забытые условия поиска.
+function syncFilterCount() {
+  const f = currentFilters();
+  const count = [f.search, f.category, f.city, f.condition, f.priceMin, f.priceMax]
+    .filter((v) => v !== '' && v != null).length;
+  [filtersCount, filtersCountMobile].forEach((el) => {
+    el.textContent = count;
+    el.hidden = count === 0;
+  });
+}
+
 const debouncedReload = debounce(() => loadPage(true), 350);
 
 searchInput.addEventListener('input', debouncedReload);
@@ -241,6 +257,7 @@ function closeFilters() {
 }
 qs('#filters-toggle').addEventListener('click', openFilters);
 qs('#filters-close').addEventListener('click', closeFilters);
+qs('#filters-apply').addEventListener('click', closeFilters);
 filterBackdrop.addEventListener('click', closeFilters);
 
 // Список избранного грузим параллельно, а не до объявлений — иначе каталог ждёт

@@ -332,7 +332,8 @@ async function loadReviews() {
       });
     });
   } catch (err) {
-    host.innerHTML = `<p class="muted">Не удалось загрузить отзывы (нужен индекс collectionGroup для reviews).</p>`;
+    console.error('loadReviews failed:', err);
+    host.innerHTML = `<p class="muted">Не удалось загрузить отзывы: ${escapeHtml(err.message)}</p>`;
   }
 }
 

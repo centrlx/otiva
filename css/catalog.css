@@ -1,56 +1,192 @@
+.catalog-categories { padding: var(--space-6) 0 0; }
+.catalog-categories h1 { font-size: var(--text-h2); margin-bottom: var(--space-3); }
+
+.catalog-section { padding-top: var(--space-5); }
+
 .catalog-layout {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 26px;
+  grid-template-columns: 252px 1fr;
+  gap: var(--space-6);
   align-items: start;
 }
 
+/* ---------- Панель фильтров ---------- */
+
 .filters {
-  padding: 20px;
   position: sticky;
-  top: 90px;
+  top: 84px;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 108px);
 }
 
 .filters-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
-.filters h3 { font-size: 16px; margin-bottom: 12px; }
+.filters-head h3 {
+  font-size: 15px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.filters-reset { margin-left: auto; }
 .filters-close { display: none; }
+
+.filters-body {
+  padding: var(--space-4);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Группы фильтров разделены линиями — так глазом видно, где кончается
+   один параметр поиска и начинается другой. */
+.filter-group {
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-group:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.filter-group .field:last-child { margin-bottom: 0; }
+
+/* Диапазон цены остаётся в две колонки и на узком экране: это одно
+   логическое поле «от — до», а не два независимых, и вертикально
+   разорванная пара читается хуже, чем просто две узкие ячейки. */
+.filters .field-row { grid-template-columns: 1fr 1fr; }
+
+.filters-foot { display: none; }
+
+/* ---------- Тулбар результатов ---------- */
+
+.catalog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.catalog-toolbar__titles { min-width: 0; }
+.catalog-toolbar h2 { font-size: var(--text-h2); margin: 0; }
+
+.catalog-toolbar__count {
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  margin-top: 2px;
+  min-height: 18px;
+}
+
+.catalog-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* Сортировка вынесена из панели фильтров к результатам: ей пользуются
+   чаще остальных фильтров, и на мобильном она не должна прятаться в шторку. */
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.sort-control label {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.sort-control select {
+  width: auto;
+  min-width: 170px;
+  min-height: var(--control-h-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding-right: var(--space-8);
+  background-position: right var(--space-2) center;
+}
+
+/* ---------- Баннер новых объявлений ---------- */
 
 .live-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-3);
   background: var(--accent-soft);
   color: var(--accent-dark);
   border: 1px solid var(--accent);
   border-radius: var(--radius-s);
-  padding: 10px 16px;
-  margin-bottom: 16px;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
   font-weight: 600;
   font-size: 14px;
+}
+
+@media (max-width: 1000px) {
+  .catalog-layout { grid-template-columns: 210px 1fr; gap: var(--space-4); }
 }
 
 @media (max-width: 860px) {
   .catalog-layout { grid-template-columns: 1fr; }
 
+  /* На мобильном фильтры — не уменьшенная копия десктопной колонки,
+     а нижняя шторка с собственной шапкой и закреплённой кнопкой применения. */
   .filters {
     position: fixed;
-    top: 0;
+    top: auto;
     left: 0;
+    right: 0;
     bottom: 0;
-    width: min(320px, 86vw);
+    width: auto;
+    max-height: 88vh;
     z-index: 61;
-    border-radius: 0;
-    overflow-y: auto;
-    transform: translateX(-100%);
-    transition: transform 0.2s ease;
+    border-radius: var(--radius-l) var(--radius-l) 0 0;
+    border-bottom: none;
+    transform: translateY(101%);
+    transition: transform 0.25s ease;
+    box-shadow: var(--shadow-lg);
   }
 
-  .filters.is-open { transform: translateX(0); }
+  .filters.is-open { transform: translateY(0); }
+
+  .filters-head { padding: var(--space-4) var(--space-4) var(--space-3); }
+  .filters-head h3 { font-size: var(--text-h3); }
   .filters-close { display: inline-flex; }
   .filters-toggle { display: inline-flex; }
+
+  .filters-foot {
+    display: block;
+    padding: var(--space-3) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .catalog-toolbar__actions { width: 100%; justify-content: space-between; }
+  .sort-control { flex: 1; }
+  .sort-control select { width: 100%; min-width: 0; }
+}
+
+@media (max-width: 480px) {
+  .sort-control label { display: none; }
 }

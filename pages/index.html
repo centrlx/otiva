@@ -17,56 +17,67 @@
 <header class="site-header" id="app-header"></header>
 
 <main>
-  <section class="section" style="padding-bottom:6px;">
+  <section class="section catalog-categories">
     <div class="container">
-      <h1 style="font-size:20px;margin-bottom:14px;">Категории</h1>
+      <h1>Категории</h1>
+      <div class="category-strip" id="category-strip"></div>
     </div>
-    <div class="category-strip" id="category-strip"></div>
   </section>
 
-  <section class="section">
+  <section class="section catalog-section">
     <div class="container catalog-layout">
       <div class="filter-backdrop" id="filter-backdrop"></div>
       <aside class="filters card" id="filters">
         <div class="filters-head">
-          <h3 class="mt-0">Фильтры</h3>
-          <button class="btn btn-ghost btn-sm filters-close" id="filters-close" type="button" aria-label="Закрыть">
+          <h3>Фильтры <span class="count-badge" id="filters-count" hidden></span></h3>
+          <button class="link-btn filters-reset" id="f-reset" type="button">Сбросить</button>
+          <button class="btn btn-ghost btn-sm btn-icon filters-close" id="filters-close" type="button" aria-label="Закрыть">
             <i data-lucide="x" class="icon"></i>
           </button>
         </div>
-        <div class="field">
-          <label for="f-search">Поиск</label>
-          <input type="search" id="f-search" placeholder="Название или описание…" />
-        </div>
-        <div class="field">
-          <label for="f-category">Категория</label>
-          <select id="f-category"><option value="">Все категории</option></select>
-        </div>
-        <div class="field">
-          <label for="f-city">Город</label>
-          <select id="f-city"><option value="">Любой город</option></select>
-        </div>
-        <div class="field">
-          <label for="f-condition">Состояние</label>
-          <select id="f-condition">
-            <option value="">Любое</option>
-            <option value="new">Новое</option>
-            <option value="used">Б/у</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Цена, ₸</label>
-          <div class="field-row">
-            <input type="number" id="f-price-min" min="0" placeholder="от" />
-            <input type="number" id="f-price-max" min="0" placeholder="до" />
+
+        <div class="filters-body">
+          <div class="filter-group">
+            <div class="field">
+              <label for="f-search">Поиск</label>
+              <input type="search" id="f-search" placeholder="Название или описание…" />
+            </div>
           </div>
-          <p class="field-hint">При заданной цене сортировка переключится на «по цене».</p>
+
+          <div class="filter-group">
+            <div class="field">
+              <label for="f-category">Категория</label>
+              <select id="f-category"><option value="">Все категории</option></select>
+            </div>
+            <div class="field">
+              <label for="f-city">Город</label>
+              <select id="f-city"><option value="">Любой город</option></select>
+            </div>
+            <div class="field">
+              <label for="f-condition">Состояние</label>
+              <select id="f-condition">
+                <option value="">Любое</option>
+                <option value="new">Новое</option>
+                <option value="used">Б/у</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <div class="field">
+              <label>Цена, ₸</label>
+              <div class="field-row">
+                <input type="number" id="f-price-min" min="0" placeholder="от" />
+                <input type="number" id="f-price-max" min="0" placeholder="до" />
+              </div>
+              <p class="field-hint">При заданной цене сортировка переключится на «по цене».</p>
+            </div>
+          </div>
         </div>
-        <div class="field">
-          <label for="f-sort">Сортировка</label>
-          <select id="f-sort"></select>
+
+        <div class="filters-foot">
+          <button class="btn btn-primary btn-block btn-lg" id="filters-apply" type="button">Показать результаты</button>
         </div>
-        <button class="btn btn-ghost btn-block" id="f-reset" type="button">Сбросить фильтры</button>
       </aside>
 
       <div class="catalog-main">
@@ -75,14 +86,21 @@
           <button class="btn btn-primary btn-sm" id="live-refresh-btn" type="button">Показать</button>
         </div>
 
-        <div class="section-head">
-          <h2 id="results-title" class="mt-0">Все объявления</h2>
-          <div class="flex-between gap-8">
-            <span class="muted" id="results-count"></span>
+        <div class="catalog-toolbar">
+          <div class="catalog-toolbar__titles">
+            <h2 id="results-title">Все объявления</h2>
+            <div class="catalog-toolbar__count" id="results-count"></div>
+          </div>
+          <div class="catalog-toolbar__actions">
             <button class="btn btn-ghost btn-sm filters-toggle" id="filters-toggle" type="button">
-              <i data-lucide="sliders-horizontal" class="icon" style="width:16px;height:16px;"></i>
+              <i data-lucide="sliders-horizontal" class="icon"></i>
               Фильтры
+              <span class="count-badge" id="filters-count-mobile" hidden></span>
             </button>
+            <div class="field sort-control">
+              <label for="f-sort">Сортировка</label>
+              <select id="f-sort"></select>
+            </div>
           </div>
         </div>
 

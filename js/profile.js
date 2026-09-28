@@ -226,6 +226,7 @@ async function loadReviews() {
       });
     });
   } catch (err) {
-    panels.reviews.innerHTML = `<p class="muted">Не удалось загрузить отзывы. Возможно, нужен составной индекс Firestore (см. консоль браузера).</p>`;
+    console.error('loadReviews failed:', err);
+    panels.reviews.innerHTML = `<p class="muted">Не удалось загрузить отзывы: ${escapeHtml(err.message)}</p>`;
   }
 }

@@ -1,38 +1,75 @@
 .profile-layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 26px;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--space-6);
   align-items: start;
 }
 
-.profile-card { padding: 22px; position: sticky; top: 84px; }
+.profile-card {
+  padding: var(--space-5);
+  position: sticky;
+  top: 84px;
+}
 
-.panel { display: flex; flex-direction: column; gap: 12px; }
+.profile-card h3 { font-size: var(--text-h3); margin-bottom: var(--space-4); }
+.profile-card .field:last-of-type { margin-bottom: var(--space-5); }
+.profile-logout { margin-top: var(--space-2); }
 
+.panel { display: flex; flex-direction: column; gap: var(--space-2); }
+
+/* Строка списка: используется для объявлений, избранного, истории и отзывов —
+   одна разметка на все вкладки профиля. */
 .mini-row {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-m);
-  padding: 14px 16px;
+  padding: var(--space-3);
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-3);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 
+.mini-row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-xs); }
+
 .mini-row__img {
-  width: 60px;
-  height: 60px;
-  border-radius: 10px;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-s);
   background: var(--surface-2) center/cover no-repeat;
   flex-shrink: 0;
 }
 
-.mini-row__body { flex: 1; min-width: 0; }
-.mini-row__title { font-weight: 700; }
-.mini-row__meta { font-size: 13px; color: var(--ink-faint); }
-.mini-row__actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.mini-row__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+.mini-row__title {
+  font-weight: 700;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-row__title a:hover { color: var(--accent); }
+.mini-row__meta { font-size: var(--text-caption); color: var(--ink-faint); }
+.mini-row__body .pill { align-self: flex-start; margin-top: var(--space-1); }
+.mini-row__body .stars { margin: 2px 0; }
+
+.mini-row__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
 
 @media (max-width: 860px) {
   .profile-layout { grid-template-columns: 1fr; }
   .profile-card { position: static; order: -1; }
+}
+
+@media (max-width: 560px) {
+  /* На телефоне действия переносятся под текст, иначе название сжимается
+     до нечитаемых двух слов ради кнопок справа. */
+  .mini-row { flex-wrap: wrap; }
+  .mini-row__actions { width: 100%; }
+  .mini-row__actions .btn { flex: 1; }
 }
