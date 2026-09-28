@@ -13,7 +13,7 @@ import { getCurrentUser, getCurrentProfile } from './auth.js';
 
 // Один чат на пару (объявление, покупатель) — детерминированный id,
 // поэтому повторный клик «Написать продавцу» просто открывает существующий чат.
-export function chatIdFor(listingId, buyerId) {
+function chatIdFor(listingId, buyerId) {
   return `${listingId}_${buyerId}`;
 }
 

@@ -91,3 +91,35 @@ export function ratingStars(avg = 0) {
 export function renderIcons() {
   window.lucide?.createIcons();
 }
+
+// Карточка объявления — одинаковая разметка в каталоге и в блоке "похожие объявления"
+// на странице объявления, раньше была продублирована в обоих местах.
+export function listingCardHtml(id, d, isFav, categoryLabel) {
+  const img = d.images?.[0];
+  const statusPill = d.status !== 'active'
+    ? `<span class="pill pill--${d.status}">${d.status === 'reserved' ? 'Забронировано' : d.status === 'sold' ? 'Продано' : 'В архиве'}</span>`
+    : '';
+  return `
+    <a class="listing-card" href="listing.html?id=${id}">
+      <div class="listing-card__img">
+        ${img ? `
+          <div class="photo-frame__bg" style="background-image:url('${escapeHtml(img)}')"></div>
+          <img class="photo-frame__img" src="${escapeHtml(img)}" alt="" loading="lazy" onerror="this.remove()" />
+        ` : '📷 без фото'}
+        <div class="listing-card__status">${statusPill}</div>
+        <button type="button" class="favorite-btn ${isFav ? 'is-active' : ''}" data-fav="${id}" aria-label="В избранное">
+          <i data-lucide="heart" class="icon"></i>
+        </button>
+      </div>
+      <div class="listing-card__body">
+        <div class="listing-card__price">${formatPrice(d.price)}</div>
+        <div class="listing-card__title">${escapeHtml(d.title)}</div>
+        ${d.reviewsCount ? `<span class="stars" title="${d.ratingAvg?.toFixed(1)}">${ratingStars(d.ratingAvg)}</span>` : ''}
+        <div class="listing-card__meta">
+          <span>${escapeHtml(d.city || '')}</span>
+          <span>${escapeHtml(categoryLabel || '')}</span>
+        </div>
+      </div>
+    </a>
+  `;
+}

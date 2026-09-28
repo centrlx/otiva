@@ -19,7 +19,7 @@ import { mountHeader, authReady, getCurrentUser, getCurrentProfile } from './aut
 import { CATEGORY_MAP, CONDITION_MAP, LISTING_STATUS, RELATED_PAGE_SIZE } from './constants.js';
 import {
   formatPrice, formatDate, formatDateTime, escapeHtml, ratingStars, toast, qs, getParam,
-  renderIcons,
+  renderIcons, listingCardHtml as sharedListingCardHtml,
 } from './utils.js';
 import { ensureFavoritesLoaded, isFavorite, toggleFavorite } from './favorites.js';
 import { confirmModal } from './modal.js';
@@ -421,38 +421,10 @@ async function loadRelated(reset) {
     added += 1;
     const item = d.data();
     relatedItemsById[d.id] = item;
-    const fav = isFavorite(d.id);
     els.relatedGrid.insertAdjacentHTML(
       'beforeend',
-      `<a class="listing-card" href="listing.html?id=${d.id}">
-        <div class="listing-card__img">
-          ${item.images?.[0] ? `
-            <div class="photo-frame__bg" style="background-image:url('${escapeHtml(item.images[0])}')"></div>
-            <img class="photo-frame__img" src="${escapeHtml(item.images[0])}" alt="" loading="lazy" onerror="this.remove()" />
-          ` : '📷'}
-          <button type="button" class="favorite-btn ${fav ? 'is-active' : ''}" data-fav="${d.id}" aria-label="В избранное">
-            <i data-lucide="heart" class="icon"></i>
-          </button>
-        </div>
-        <div class="listing-card__body">
-          <div class="listing-card__price">${formatPrice(item.price)}</div>
-          <div class="listing-card__title">${escapeHtml(item.title)}</div>
-        </div>
-      </a>`
+      sharedListingCardHtml(d.id, item, isFavorite(d.id), CATEGORY_MAP[item.category])
     );
-  });
-  els.relatedGrid.querySelectorAll('[data-fav]').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const id = btn.dataset.fav;
-      const active = await toggleFavorite(id, relatedItemsById[id]);
-      if (active === null) {
-        toast('Войдите, чтобы добавлять в избранное', 'error');
-        return;
-      }
-      btn.classList.toggle('is-active', active);
-    });
   });
   els.relatedMoreWrap.hidden = snap.docs.length < RELATED_PAGE_SIZE;
   if (!added && !els.relatedGrid.children.length) {
@@ -462,3 +434,20 @@ async function loadRelated(reset) {
 }
 
 els.relatedMoreBtn.addEventListener('click', () => loadRelated(false));
+
+// Один делегированный обработчик на грид вместо навешивания слушателя на каждую
+// карточку — иначе повторные вызовы loadRelated() при «Показать ещё» переслушивали бы
+// уже отрисованные карточки заново, и клик по сердечку слал бы дублирующиеся записи в Firestore.
+els.relatedGrid.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-fav]');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const id = btn.dataset.fav;
+  const active = await toggleFavorite(id, relatedItemsById[id]);
+  if (active === null) {
+    toast('Войдите, чтобы добавлять в избранное', 'error');
+    return;
+  }
+  btn.classList.toggle('is-active', active);
+});

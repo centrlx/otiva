@@ -17,7 +17,7 @@ import { CITIES, LISTING_STATUS, HISTORY_STATUS } from './constants.js';
 import {
   formatPrice, formatDate, formatDateTime, escapeHtml, ratingStars, toast, qs, renderIcons,
 } from './utils.js';
-import { ensureFavoritesLoaded, toggleFavorite } from './favorites.js';
+import { ensureFavoritesLoaded, getFavorites, toggleFavorite } from './favorites.js';
 import { confirmModal } from './modal.js';
 import { perfStart, perfEnd } from './perf.js';
 
@@ -121,17 +121,14 @@ function listingRow(id, d) {
 
 async function loadFavorites() {
   panels.favorites.innerHTML = '<div class="loader">Загрузка…</div>';
-  // Не await — идёт параллельно с запросом ниже, нужен только к моменту клика «Убрать».
-  const favCachePromise = ensureFavoritesLoaded();
-  const snap = await getDocs(query(collection(db, 'users', user.uid, 'favorites'), orderBy('createdAt', 'desc'), limit(50)));
-  await favCachePromise;
-  if (snap.empty) {
+  await ensureFavoritesLoaded();
+  const items = getFavorites();
+  if (!items.length) {
     panels.favorites.innerHTML = `<div class="empty-state"><h3>Список избранного пуст</h3><a class="btn btn-primary" href="index.html">Перейти в каталог</a></div>`;
     return;
   }
-  panels.favorites.innerHTML = snap.docs
-    .map((d) => {
-      const f = d.data();
+  panels.favorites.innerHTML = items
+    .map(([, f]) => {
       return `
         <div class="mini-row">
           <div class="mini-row__img" style="${f.listingImage ? `background-image:url('${escapeHtml(f.listingImage)}')` : ''}"></div>

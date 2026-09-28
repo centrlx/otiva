@@ -5,7 +5,7 @@ const LABELS = { light: 'Светлая', dark: 'Тёмная', system: 'Сис�
 const ICONS = { light: 'sun', dark: 'moon', system: 'monitor' };
 const ORDER = ['light', 'dark', 'system'];
 
-export function getTheme() {
+function getTheme() {
   try {
     return localStorage.getItem(KEY) || 'system';
   } catch {
@@ -13,13 +13,13 @@ export function getTheme() {
   }
 }
 
-export function applyTheme(value) {
+function applyTheme(value) {
   const root = document.documentElement;
   if (value === 'light' || value === 'dark') root.setAttribute('data-theme', value);
   else root.removeAttribute('data-theme');
 }
 
-export function setTheme(value) {
+function setTheme(value) {
   try {
     localStorage.setItem(KEY, value);
   } catch {

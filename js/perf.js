@@ -31,19 +31,6 @@ export function perfEnd(label, extra = '') {
   return duration;
 }
 
-// Оборачивает промис (например getDocs(...)) и логирует её длительность автоматически.
-export async function perfWrap(label, promise) {
-  perfStart(label);
-  try {
-    const result = await promise;
-    perfEnd(label);
-    return result;
-  } catch (err) {
-    perfEnd(label, 'ошибка: ' + err.message);
-    throw err;
-  }
-}
-
 // Сводка по сетевым запросам к Firebase из встроенного Resource Timing API —
 // не требует ручных меток, ловит вообще все обращения к googleapis.com на странице.
 window.addEventListener('load', () => {

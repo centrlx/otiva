@@ -11,17 +11,19 @@ import { authReady, getCurrentUser } from './auth.js';
 
 // Избранное хранится в Firestore, в подколлекции users/{uid}/favorites —
 // приватные данные пользователя, id документа = id объявления (идемпотентно).
-let cache = new Set();
+// Кэш хранит целиком данные документов (не только id), чтобы страница профиля
+// могла отрисовать список избранного без повторного запроса той же коллекции.
+let cache = new Map();
 let loadPromise = null;
 
 async function loadCache() {
   const { user } = await authReady();
   if (!user) {
-    cache = new Set();
+    cache = new Map();
     return cache;
   }
   const snap = await getDocs(collection(db, 'users', user.uid, 'favorites'));
-  cache = new Set(snap.docs.map((d) => d.id));
+  cache = new Map(snap.docs.map((d) => [d.id, d.data()]));
   return cache;
 }
 
@@ -36,6 +38,12 @@ export function isFavorite(listingId) {
   return cache.has(listingId);
 }
 
+// Список избранного для страницы профиля — из уже загруженного кэша, без нового запроса.
+export function getFavorites() {
+  return Array.from(cache.entries())
+    .sort((a, b) => (b[1].createdAt?.toMillis?.() || 0) - (a[1].createdAt?.toMillis?.() || 0));
+}
+
 // Возвращает true/false (новое состояние) или null, если пользователь не авторизован.
 export async function toggleFavorite(listingId, listing = {}) {
   const user = getCurrentUser();
@@ -46,7 +54,7 @@ export async function toggleFavorite(listingId, listing = {}) {
     cache.delete(listingId);
     return false;
   }
-  await setDoc(ref, {
+  const data = {
     listingId,
     listingTitle: listing.title || '',
     listingPrice: listing.price ?? null,
@@ -54,7 +62,8 @@ export async function toggleFavorite(listingId, listing = {}) {
     listingStatus: listing.status || 'active',
     city: listing.city || '',
     createdAt: serverTimestamp(),
-  });
-  cache.add(listingId);
+  };
+  await setDoc(ref, data);
+  cache.set(listingId, data);
   return true;
 }
