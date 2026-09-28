@@ -223,8 +223,13 @@ async function loadChats() {
 
 // Модерация: читать переписку любых двух пользователей может только админ
 // (правила Firestore разрешают это отдельной веткой isAdmin() в chats/messages).
+let closeChatViewer = null;
+
 function openChatViewer(chat) {
   if (!chat) return;
+  // Если предыдущая модалка не была закрыта явно (клик на другую строку таблицы) —
+  // её realtime-подписка на сообщения иначе осталась бы висеть в фоне навсегда.
+  closeChatViewer?.();
   let host = document.getElementById('admin-modal-host');
   if (!host) {
     host = document.createElement('div');
@@ -283,7 +288,9 @@ function openChatViewer(chat) {
   const close = () => {
     unsub();
     host.innerHTML = '';
+    closeChatViewer = null;
   };
+  closeChatViewer = close;
   document.getElementById('admin-chat-close-btn').addEventListener('click', close);
   document.getElementById('admin-chat-backdrop').addEventListener('click', (e) => {
     if (e.target.id === 'admin-chat-backdrop') close();
@@ -370,67 +377,3 @@ async function loadStats() {
 function tile(value, label) {
   return `<div class="stat-tile"><div class="stat-tile__value">${value}</div><div class="stat-tile__label">${label}</div></div>`;
 }
-
-// ---------- Демо-данные ----------
-
-const DEMO_TITLES = [
-  ['Смартфон iPhone 13, 128 ГБ', 'electronics', 54990],
-  ['Ноутбук ASUS VivoBook 15', 'electronics', 42000],
-  ['Наушники Sony WH-1000XM4', 'electronics', 19900],
-  ['Велосипед горный Stels Navigator', 'transport', 15500],
-  ['Автомобиль Kia Rio 2018', 'transport', 890000],
-  ['Скутер Yamaha Aerox', 'transport', 165000],
-  ['Квартира-студия 28 м²', 'realestate', 3200000],
-  ['Дом с участком 6 соток', 'realestate', 5600000],
-  ['Диван угловой раскладной', 'home', 21000],
-  ['Холодильник Samsung', 'home', 34500],
-  ['Куртка зимняя мужская', 'fashion', 4900],
-  ['Кроссовки Nike Air Max', 'fashion', 6200],
-  ['Гитара акустическая Yamaha', 'hobby', 12000],
-  ['Палатка туристическая 4-местная', 'hobby', 7800],
-  ['Услуги репетитора по математике', 'services', 1200],
-  ['Ремонт квартир под ключ', 'services', 50000],
-  ['Требуется курьер на авто', 'job', 60000],
-  ['Ищу работу веб-разработчиком', 'job', 90000],
-  ['Котята шотландские вислоухие', 'animals', 8000],
-  ['Коляска детская 2 в 1', 'kids', 11500],
-];
-
-qs('#seed-btn').addEventListener('click', async () => {
-  const btn = qs('#seed-btn');
-  btn.disabled = true;
-  btn.textContent = 'Заполняем…';
-  const { tokenize } = await import('./utils.js');
-  try {
-    for (let i = 0; i < DEMO_TITLES.length; i += 1) {
-      const [title, category, price] = DEMO_TITLES[i];
-      const description = `${title}. Хорошее состояние, торг уместен. Демонстрационное объявление №${i + 1} для проверки каталога.`;
-      await addDoc(collection(db, 'listings'), {
-        title,
-        description,
-        titleLower: title.toLowerCase(),
-        searchTokens: tokenize(`${title} ${description}`),
-        category,
-        condition: i % 3 === 0 ? 'new' : 'used',
-        price,
-        city: CITIES[i % CITIES.length],
-        tags: [],
-        images: [],
-        ownerId: adminAuth.user.uid,
-        ownerName: adminAuth.profile?.displayName || adminAuth.user.email,
-        status: 'active',
-        ratingAvg: 0,
-        reviewsCount: 0,
-        createdAt: serverTimestamp(),
-      });
-    }
-    toast('Демо-данные добавлены!', 'success');
-    loaded.listings = false;
-    if (!panels.listings.hidden) loadListings();
-  } catch (err) {
-    toast('Ошибка: ' + err.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Заполнить демо-данными (20 объявлений)';
-  }
-});

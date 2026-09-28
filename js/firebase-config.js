@@ -1,6 +1,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { initializeFirestore } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCS7DTZmrxUQ8_aJnSHIR29AkZK3FYFEo0",
@@ -14,12 +18,19 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-// experimentalAutoDetectLongPolling каждый раз ЗАНОВО прогоняет пробную детекцию транспорта
-// (пробует потоковый WebChannel, ждёт, при неудаче откатывается на long-polling) — а поскольку
-// это multi-page app и на каждой странице сразу открывается realtime-бейдж непрочитанных
-// сообщений (см. chat.js/watchUnreadBadge, вызывается из auth.js на КАЖДОЙ странице), эта
-// детекция перезапускается при каждом переходе. Именно она и давала стабильные ~10с зависания
-// в сетях, где потоковый fetch не проходит (тот же класс проблемы, что ловили в Safari).
-// experimentalForceLongPolling пропускает детекцию и сразу использует long-polling —
-// без гонки/таймаута на каждой загрузке страницы.
-export const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+// Без экспериментальных флагов транспорта — форсированный long-polling не подтвердился
+// измерениями (даже одноразовые getDoc/getDocs шли по 4-10с), так что тут дефолтное
+// поведение SDK. Если в конкретном браузере/сети будет ошибка
+// "Fetch API cannot load .../Listen/channel" (как раньше ловили в Safari) — вернуть
+// вторым аргументом { experimentalAutoDetectLongPolling: true }.
+//
+// persistentLocalCache — офлайн-кэш Firestore в IndexedDB. Это MPA: каждый переход —
+// полная перезагрузка страницы и новая инициализация Firestore с нуля. Без кэша это
+// значит, что даже повторное открытие того же объявления снова ждёт сеть. С кэшем
+// SDK сперва отдаёт то, что уже есть на диске (мгновенно), и досинхронизирует свежие
+// данные в фоне через те же onSnapshot — realtime не отключается, просто первый кадр
+// не пустой. persistentMultipleTabManager — чтобы не падать, если сайт открыт в
+// нескольких вкладках одновременно.
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+});
