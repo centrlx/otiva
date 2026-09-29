@@ -78,6 +78,12 @@ service cloud.firestore {
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
           request.resource.data.status == 'cancelled') ||
         (isChatParticipant(resource) &&
+          resource.data.status == 'cancelled' &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'confirmedByOwner', 'confirmedByBuyer']) &&
+          request.resource.data.status == 'pending' &&
+          request.resource.data.confirmedByOwner == false &&
+          request.resource.data.confirmedByBuyer == false) ||
+        (isChatParticipant(resource) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'lastMessageAt', 'unreadForOwner', 'unreadForBuyer']))
       );
       allow delete: if isAdmin();

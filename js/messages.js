@@ -151,6 +151,8 @@ function renderChatHeader() {
         <button class="btn btn-ghost btn-sm" id="chat-decline-btn" type="button">Отклонить</button>
       `;
     }
+  } else if (chat.status === 'cancelled') {
+    actionsHtml = `<button class="btn btn-secondary btn-sm" id="chat-restart-btn" type="button">Начать сделку заново</button>`;
   }
 
   els.header.innerHTML = `
@@ -174,7 +176,23 @@ function renderChatHeader() {
   });
   qs('#chat-confirm-btn', els.header)?.addEventListener('click', confirmMySide);
   qs('#chat-decline-btn', els.header)?.addEventListener('click', declineDeal);
+  qs('#chat-restart-btn', els.header)?.addEventListener('click', restartDeal);
   renderIcons();
+}
+
+async function restartDeal() {
+  const chat = chatsCache.get(activeChatId);
+  if (!chat || chat.status !== 'cancelled') return;
+  try {
+    await updateDoc(doc(db, 'chats', activeChatId), {
+      status: 'pending',
+      confirmedByOwner: false,
+      confirmedByBuyer: false,
+    });
+    toast('Сделка начата заново', 'success');
+  } catch (err) {
+    toast('Ошибка: ' + err.message, 'error');
+  }
 }
 
 async function confirmMySide() {
